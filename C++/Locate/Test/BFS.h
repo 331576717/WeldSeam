@@ -1,5 +1,8 @@
 #include<vector>
 #include<list>
+#include<deque>
+#include<vector>
+#include<map>
 #include<opencv2\core\core.hpp>
 #include<opencv2\highgui\highgui.hpp>
 #include<opencv2\imgproc\imgproc.hpp>
@@ -8,120 +11,73 @@ using namespace cv;
 using namespace std;
 
 Mat bwLabel(Mat mat);
-vector<Point> bwLabelForce(Mat mat);
+Mat bwLabelForce(Mat mat, double lowerBound = 0, double upperBound = 1);
 int BFSForce(Mat mat, int xIndex, int yIndex, int count);
 Mat BFS(Mat mat, int xIndex, int yIndex, int count);
 vector<string> getLocationText(vector<Point> p);
 vector<Point> getLocate(Mat mat);
-//int main()
-//{
-//
-//	Mat I = imread("bw.jpg");
-//	cvtColor(I,I,cv::COLOR_RGB2GRAY);
-//	I = I > 100;
-//	//imshow("bw",I);
-//	//waitKey();
-//	//cout << I.channels();
-//	
-//	//cout << I.isContinuous();
-//	I = bwLabel(I);
-//	imshow("orignal",I);
-//	
-//	waitKey();
-//	return 0;
-//}
-vector<Point> bwLabelForce(Mat mat)
+
+Mat bwLabelForce(Mat mat, double lowerBound , double upperBound)
 {
+	
 	Size size = mat.size();
 	copyMakeBorder(mat,mat,1,1,1,1,BORDER_CONSTANT,Scalar(0,0,0));
-	//cout << mat.size() << endl;
-	//imshow("mat",mat);
-	//waitKey();
+	
 	int height = size.height;
 	int width = size.width;
 	int label = 1;
 	
+	deque<int> suitableAera;
 	int maxCount=0,secondMaxCount=0,maxLabel=0,secondMaxLabel=0;
 	for(int i=1; i<height; ++i)
 	{
 		uchar* data = mat.ptr<uchar>(i);
 		for(int j=1; j<width; ++j)
 		{
-			
 			if(255 == (int)data[j])
 			{
 				//cout << "i: " << i << "  j:" << j << endl;
 				int temp = BFSForce(mat,i,j,label);
-				if(temp > maxCount && temp > secondMaxCount && temp > 1500 && temp < 2500)
+				
+				if( temp > height * width * lowerBound && temp < height * width * upperBound)
 				{
-					secondMaxCount = maxCount;
-					secondMaxLabel = maxLabel;
-					maxCount = temp;
-					maxLabel = label;
+
+					suitableAera.push_back(label);
 				}
-				else if(temp > secondMaxCount && temp < maxCount && temp > 1500 && temp < 2500)
-				{
-					secondMaxCount = temp;
-					secondMaxLabel = label;
-				}
+				
 				label++;
 			}
 			
 		}
-
 	}
 	
-	Point maxIndex(0,0), secondMaxIndex(0,0);
+	
 	Mat res(mat.size().height-2,mat.size().width-2,CV_8U);
+	//int it = suitableAera[0];
 	for(int i=1; i<mat.size().height-1; ++i)
 	{
 		uchar* src = mat.ptr<uchar>(i);
 		uchar* dst = res.ptr<uchar>(i-1);
 		for(int j=1; j<mat.size().width-1; ++j)
 		{
-			if(maxLabel == src[j])
+			for(int i=0;i<suitableAera.size();i++)
 			{
-				dst[j-1] = 255;
-				maxIndex.x += i-1;
-				maxIndex.y += j-1;
+				if(src[j] == suitableAera[i])
+				{
+					dst[j-1] = 255;
+				}
+				else
+				{
+					dst[j-1] = 0;
+				}
 			}
-			else if(secondMaxLabel == src[j])
-			{
-				dst[j-1] = 255;
-				secondMaxIndex.x += i-1;
-				secondMaxIndex.y += j-1;
-			}
-			else
-				dst[j-1] = 0;
-			/*if(src[j] != 0)
-				cout <<(int)dst[j-1] << endl;*/
 		}
 	}
 	mat = res.clone();
-	
-	vector<Point> locationVec;
-	if(maxCount>0 && secondMaxCount)
-	{
-		maxIndex.x /= maxCount;
-		maxIndex.y /= maxCount;
-		secondMaxIndex.x /= secondMaxCount;
-		secondMaxIndex.y /= secondMaxCount;
-		
-		locationVec.push_back(Point(maxIndex.y, maxIndex.x));
-		locationVec.push_back(Point(secondMaxIndex.y, secondMaxIndex.x));
-		//imshow("res",res);
-		//waitKey();
-		return locationVec;
-	}
-	else
-	{
-		cout << "No fitable area!";
-	}
-	return locationVec;
-
-	
-
-	
+	//imshow("res",mat);
+	//waitKey();
+	vector<Point> vec;
+	return mat;
 }
 
 int BFSForce(Mat mat, int xIndex, int yIndex, int label)
@@ -129,7 +85,7 @@ int BFSForce(Mat mat, int xIndex, int yIndex, int label)
 	int count=0;
 	//cout << mat.size();
 	//cout << (int)mat.at<uchar>(xIndex,yIndex);
-	list<Point> points;
+	deque<Point> points;
 	points.push_back(Point(xIndex,yIndex));
 	while(!points.empty())
 	{
@@ -235,9 +191,7 @@ int BFSForce(Mat mat, int xIndex, int yIndex, int label)
 
 		//mat.at<uchar>(pt.x,pt.y) = 0;
 		points.pop_front();
-		
 		//cout << "ptIndex: " << pt << "ptValue: " << (int)mat.at<uchar>(1,591) << endl;
-		
 	}
 	//imshow("mat",mat);
 	//waitKey();

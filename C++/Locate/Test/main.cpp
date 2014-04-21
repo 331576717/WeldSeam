@@ -9,6 +9,7 @@
 using namespace std;
 using namespace cv;
  Mat& processImage(Mat& mat);
+ 
 int main()
 {
 	//声明IplImage指针
@@ -29,13 +30,20 @@ int main()
   {
 	 cv::Mat image;
 	 
-	 //image = processImage(imread("Color_120_0.jpg"));
-   	 //imshow("hello",image);
-	 //cv::waitKey();
-      pFrame=cvQueryFrame( pCapture );
+	double duration;
+	duration = static_cast<double>(cv::getTickCount());
+	
+	image = processImage(imread("E:\\焊接定位\\pictures\\straightSeam\\Color_120_1.jpg"));
+
+	duration = static_cast<double>(cv::getTickCount()) - duration;
+	duration /= cv::getTickFrequency();
+	cout << duration << endl;
+   	 imshow("hello",image);
+	 cv::waitKey();
+     pFrame=cvQueryFrame( pCapture );
 	  Mat fr(pFrame);
 	  
-	  //fr = processImage(fr);
+	  fr = processImage(fr);
       if(!pFrame)break;
 	 // vector<Mat> planes;
 	 // cv::split(fr,planes);
@@ -71,21 +79,22 @@ int main()
   return 0;
 
 }
+
+
  Mat& processImage(Mat& mat)
  {
-	 
-	 //double duration;
-	 //duration = static_cast<double>(cv::getTickCount());
 
+	 
+	
 	 Mat tempMat = mat.clone();
 	//高斯滤波和中值滤波
 	cvtColor(mat,tempMat,CV_RGB2GRAY);
-	//imshow("result",mat);
+	
 	GaussianBlur(tempMat,tempMat,Size(13,13),0.5,0.5);
+	
 	medianBlur(tempMat,tempMat,7);
 	
-
-
+	
 	//阴影归一化
 	/*cv::Mat element(19,9,CV_8U,cv::Scalar(1));
 	Mat tophatMat;
@@ -95,21 +104,37 @@ int main()
 	cv::add(tempMat,tophatMat,tophatMat);
 	cv::addWeighted(tophatMat,1,blackhatMat,-1,0,tempMat);*/
 	
-	Mat bw = (tempMat<120);
+	Mat bw;// = (tempMat < 110);
 	
-	//cv::adaptiveThreshold(tempMat,bw,255,cv::ADAPTIVE_THRESH_MEAN_C,cv::THRESH_BINARY_INV,77,17);
-	imshow("mat",bw);
-	waitKey();
+	cv::adaptiveThreshold(tempMat,bw,255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY_INV,71,61);
+	//imshow("mat",bw);
+	//waitKey();
 	//imwrite("bw.jpg",bw);
-	vector<Point> location = bwLabelForce(bw);
-//	imshow("bw",bw);
-//	waitKey();
+	
+	bw = bwLabelForce(bw,0.001);
+
+	for(int i=1; i<(mat.size()).height; ++i)
+	{
+		uchar* pMat = mat.ptr<uchar>(i);
+		uchar* pBw = bw.ptr<uchar>(i);
+		for(int j=1; j<(mat.size()).width; ++j)
+		{
+			if(255 ==pBw[j])
+			{
+				pMat[3*j] = 0;
+				pMat[3*j+1] = 0;
+				pMat[3*j+2] = 255;
+			}
+		}
+	}
+
+	//imshow("mat",mat);
+	//waitKey();
+
 	//vector<Point> location = getLocate(bw);
 
-	//duration = static_cast<double>(cv::getTickCount()) - duration;
-	//duration /= cv::getTickFrequency();
-	//cout << duration << endl;
-	if(!location.empty())
+	
+	/*if(!location.empty())
 	{
 		cv::circle(mat,location[0],10,Scalar(0,255,255));
 		cv::circle(mat,location[1],10,Scalar(0,255,255));
@@ -165,6 +190,6 @@ int main()
 	//cv::drawContours(mat,resContours,-1,cv::Scalar(255, 255,255),1);
 	////imshow("mat",mat);
 	//imshow("result1",mat);
-
+	*/
 	return mat;
  }
