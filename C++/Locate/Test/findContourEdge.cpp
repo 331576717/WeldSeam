@@ -11,6 +11,34 @@
 #include  <stdlib.h>
 using namespace cv;
 using namespace std;
+Vector<Point> getBound(Vector<Point> vP)
+{
+	int top = 9999, bottom = 0, left = 9999, right = 0;
+	for(int i=0; i < vP.size(); i++)
+	{
+		if (vP[i].x < left)
+		{
+			left = vP[i].x;
+		}
+		if (vP[i].x > right)
+		{
+			right = vP[i].x;
+		}
+		if (vP[i].y < top)
+		{
+			top = vP[i].y;
+		}
+		if(vP[i].y > bottom)
+		{
+			bottom = vP[i].y;
+		}
+	}
+	Vector<Point> resVec;
+	resVec.push_back(Point(left,top));
+	resVec.push_back(Point(right,bottom));
+	return resVec;
+}
+
 Mat localOTSU(Mat img, Size block)
 {
 	Mat res = Mat::zeros((img.size()).height,(img.size()).width,CV_8U);
@@ -143,7 +171,7 @@ int proc(Mat img)
 	//contous.
 	//测试总共检测到的轮廓数
 	//cout << "contous size:" << contous.size() << endl;
-	
+	Vector<Point> bound;
 	for (int i=0; i < contous.size(); i++)
 	{
 		//通过轮廓边缘像素数做第一步过滤（还差像素区域平均值过滤）
@@ -152,6 +180,13 @@ int proc(Mat img)
 			//cout << "contou area:" << cv::contourArea(*iter)<<endl;
 			//tarcontous.push_back(*iter);
 			drawContours(binaryimg,contous,i,Scalar(255,255,255),-1);
+			bound = getBound(contous[i]);
+			line(res, bound[0], Point(bound[1].x, bound[0].y), Scalar(255,0,0),1);
+			line(res, bound[0], Point(bound[0].x, bound[1].y), Scalar(255,0,0),1);
+			line(res, Point(bound[0].x, bound[1].y), bound[1], Scalar(255,0,0),1);
+			line(res, Point(bound[1].x, bound[0].y), bound[1], Scalar(255,0,0),1);
+			//imshow("bound",res);
+			//waitKey();
 			cout << contourArea(contous[i]) << endl;
 		}
 		else
@@ -185,33 +220,37 @@ int proc(Mat img)
 	resLine[2] /= 7;
 	resLine[3] /= 7;
 	double k = -1/((resLine[3]-resLine[1])/(resLine[2]-resLine[0]));
-	Point start = Point(200,500), end = Point(200,800);
-	for(int i = 0; i < 10; i++)
+	Point start = bound[0], end = bound[0];
+	
+	while(start.x <= bound[1].x && start.x >= bound[0].x)
 	{
-		int step = 100;
-		
-		for(int j=1;j<50;j++)
+		int step = 5;
+		int j=1;
+		int count=0;
+		Point center = Point(0,0);
+		while(end.y <= bound[1].y && end.y >= bound[0].y)
 		{
-			cout << j;
 			end.x -= 1;
-			int y2 = k * (start.x-1*j) + start.y - k * start.x;
-			int y1 = 500;
-			line( res, Point(cvRound(start.x), cvRound(y1)), Point(cvRound(end.x), cvRound(y2)), Scalar(0,0,255), 2, CV_AA);
-			imshow("bw",res);
-			waitKey();
+			end.y = cvRound(k * (start.x-1*j) + start.y - k * start.x);
+			if(255 == (int)binaryimg.at<uchar>(Point(end.x,end.y)) && count < 2)
+			{
+				center.x += end.x/2;
+				center.y += end.y/2;
+				count++;
+				if(2 == count)
+				circle(res,Point(center.x,center.y),1,Scalar(255,255,255));	
+			}
 			
+			//circle(res,Point(end.x,end.y),0.5,Scalar(255,255,255));
+			//line(binaryimg, Point(cvRound(start.x), cvRound(start.y)), Point(cvRound(end.x), cvRound(end.y)), Scalar(255,255,255), 1, CV_AA);
+			j++;
 		}
-		
-		
-		//line( res, Point(cvRound(resLine[0]), cvRound(resLine[1])), Point(cvRound(600), cvRound(y)), Scalar(0,0,255), 3, CV_AA);
-		//line( res, Point(cvRound(resLine[0]), cvRound(resLine[1])), Point(cvRound(resLine[2]), cvRound(resLine[3])), Scalar(0,0,255), 3, CV_AA);
-		
-		//line(res,Point(269,2),Point(345,345),Scalar(255,255,255),4);
-		start.x += 50;
-		end.x = start.x;
-		cout << i << endl;
-		
+		start.x += step;
+		end = start;
+		//cout << i << endl;
 	}
+	imshow("process",res);
+	waitKey();
 	
 	//float theta = 0;
 	/*for( size_t i = 0; i < lines.size(); i++ )
