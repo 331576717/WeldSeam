@@ -1,19 +1,19 @@
 function b=test1() 
-I=imread('C:\Users\James\Documents\Visual Studio 2010\Projects\Test\Test\Color_120_13.jpg');
+I=imread('Color_120_1.jpg');
 %imgray = I(:,:,1)*0.7 + I(:,:,2)*0.2 + I(:,:,3)*0.1;
 imgray=rgb2gray(I);
 %figure(),imshow(I);
 w=fspecial('gaussian',[10 10],0.5);
 imgray = imfilter(imgray,w,'replicate');
-%figure(),imshow(imgray);
+figure(),imshow(imgray);
 imgray = medfilt2(imgray,[6 6]);
-%figure(),imshow(imgray);
+figure(),imshow(imgray);
 se=strel('rectangle',[20 10]);
 g=imsubtract(imadd(imgray,imtophat(imgray,se)),imbothat(imgray,se));
 figure(),imshow(g);
 %imhist(g)
 
-%figure(),imshow(g>30);
+figure(),imshow(g>30);
 figure,imshow(g);
 bw=logical(g<50);
 bw(:,1000:end)=0;

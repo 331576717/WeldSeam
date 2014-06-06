@@ -33,13 +33,13 @@ int main()
 	double duration;
 	duration = static_cast<double>(cv::getTickCount());
 	
-	image = processImage(imread("E:\\焊接定位\\pictures\\straightSeam\\Color_120_1.jpg"));
+	//image = processImage(imread("E:\\焊接定位\\pictures\\20140526\\Color_120_4.jpg"));
 
-	duration = static_cast<double>(cv::getTickCount()) - duration;
-	duration /= cv::getTickFrequency();
-	cout << duration << endl;
-   	 imshow("hello",image);
-	 cv::waitKey();
+	//duration = static_cast<double>(cv::getTickCount()) - duration;
+	//duration /= cv::getTickFrequency();
+	//cout << duration << endl;
+   	 //imshow("hello",image);
+	 //cv::waitKey();
      pFrame=cvQueryFrame( pCapture );
 	  Mat fr(pFrame);
 	  
@@ -94,7 +94,8 @@ int main()
 	
 	medianBlur(tempMat,tempMat,7);
 	
-	
+	//imshow("blur",tempMat);
+	//waitKey();
 	//阴影归一化
 	/*cv::Mat element(19,9,CV_8U,cv::Scalar(1));
 	Mat tophatMat;
@@ -106,9 +107,9 @@ int main()
 	
 	Mat bw;// = (tempMat < 110);
 	
-	cv::adaptiveThreshold(tempMat,bw,255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY_INV,71,61);
-	//imshow("mat",bw);
-	//waitKey();
+	cv::adaptiveThreshold(tempMat,bw,255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY_INV,71,10);
+	imshow("bw",bw);
+	waitKey();
 	//imwrite("bw.jpg",bw);
 	
 	bw = bwLabelForce(bw,0.001);
@@ -128,8 +129,8 @@ int main()
 		}
 	}
 
-	//imshow("mat",mat);
-	//waitKey();
+	imshow("mat",mat);
+	waitKey();
 
 	//vector<Point> location = getLocate(bw);
 
