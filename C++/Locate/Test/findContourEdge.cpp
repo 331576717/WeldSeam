@@ -9,8 +9,27 @@
 #include  <io.h>
 #include  <stdio.h>
 #include  <stdlib.h>
+#include <algorithm>
 using namespace cv;
 using namespace std;
+void rankLines(vector<Vec4i>& lines)
+{
+	for(int i=0; i<lines.size(); i++)
+	{
+		Vec4i l = lines[i];
+		if (l[0] > l[2])
+		{
+			int tempX, tempY;
+			tempX = l[2], tempY = l[3];
+			l[2] = l[0], l[3] = l[1];
+			l[0] = tempX, l[1] = tempY;
+		}
+	}
+}
+bool CompareSlop(Vec4i l1, Vec4i l2)
+{
+	return (l1[3]-l1[1])/(l1[2]-l1[0]) > (l2[3]-l2[1])/(l2[2]-l2[0]); 
+}
 Vector<Point> getBound(Vector<Point> vP)
 {
 	int top = 9999, bottom = 0, left = 9999, right = 0;
@@ -105,15 +124,15 @@ int main()
 		//pFrame=cvQueryFrame( pCapture );
 		//if(!pFrame)break;
 		//cvShowImage("video",pFrame);
-		Mat frame = imread("E:\\焊接定位\\pictures\\20140526\\Color_120_4.jpg");
+		Mat frame = imread("E:\\焊接定位\\pictures\\20140609\\18_41_22.jpg");
 		//cap >> frame; // get a new frame from camera
 		//cvtColor(frame, frame, CV_BGR2GRAY);
 		//GaussianBlur(frame, frame, Size(7,7), 1.5, 1.5);
 		//Canny(frame, frame, 0, 30, 3);
 		
 		proc(frame);
-		//imshow("img",frame);
-		char c=cvWaitKey(5);
+		imshow("img",frame);
+		char c=cvWaitKey(15);
 		
 		if(c=='s')
 		{
@@ -148,8 +167,8 @@ int proc(Mat img)
 	Mat res;
 	res = img.clone();
 	//addWeighted( img, 1, background, -1, 0.0, img);
-	//imshow("res",img);
-	//waitKey();
+	imshow("res",img);
+	waitKey();
 	Mat grayimg;
 	cvtColor(img,grayimg,CV_RGB2GRAY);
 	
@@ -157,16 +176,17 @@ int proc(Mat img)
 
 	medianBlur(grayimg,grayimg,7);
 	//namedWindow("grayimg",1);
-	//imshow("grayimg", grayimg);
-	//waitKey();
+	imshow("grayimg", grayimg);
+	waitKey();
 
 	Mat binaryimg; //= grayimg < 100;
-	//localOTSU(grayimg,Size(60,60));
-	//cv::threshold(grayimg,binaryimg,0,60,THRESH_OTSU);
-	cv::adaptiveThreshold(grayimg,binaryimg,255,cv::THRESH_BINARY_INV,cv::ADAPTIVE_THRESH_GAUSSIAN_C,51,21);
-	//binaryimg = (grayimg>10);
-	
-	vector<vector<Point>> contous;
+	localOTSU(grayimg,Size(60,60));
+	//cv::threshold(grayimg,binaryimg,50,70,THRESH_OTSU);
+	//cv::adaptiveThreshold(grayimg,binaryimg,255,cv::THRESH_BINARY_INV,cv::ADAPTIVE_THRESH_GAUSSIAN_C,31,30);
+	//binaryimg = (grayimg>65);
+	imshow("bw",binaryimg);
+	waitKey();
+	/*vector<vector<Point>> contous;
 	findContours(binaryimg,contous,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
 	//contous.
 	//测试总共检测到的轮廓数
@@ -181,6 +201,7 @@ int proc(Mat img)
 			//tarcontous.push_back(*iter);
 			drawContours(binaryimg,contous,i,Scalar(255,255,255),-1);
 			bound = getBound(contous[i]);
+			//框定扫描范围
 			line(res, bound[0], Point(bound[1].x, bound[0].y), Scalar(255,0,0),1);
 			line(res, bound[0], Point(bound[0].x, bound[1].y), Scalar(255,0,0),1);
 			line(res, Point(bound[0].x, bound[1].y), bound[1], Scalar(255,0,0),1);
@@ -192,15 +213,66 @@ int proc(Mat img)
 		else
 			drawContours(binaryimg,contous,i,Scalar(0,0,0),-1);
 		i++;
-	}
-	medianBlur(binaryimg,binaryimg,3);
+	}*/
+	//medianBlur(binaryimg,binaryimg,3);
 	
-	Canny(binaryimg,binaryimg,10,80);
-	
-	//namedWindow("binary",1);
+	//Canny(binaryimg,binaryimg,10,80);
 	vector<Vec4i> lines;
 	HoughLinesP(binaryimg,lines,1,CV_PI/36,50,50,10);
-	
+	rankLines(lines);
+	sort(lines.begin(),lines.end(),CompareSlop);
+	Vec4i line1,line2;
+	for(int i=0; i<4; i++)
+		line1[i] = line2[i] = 0;
+	for (int i=0; i<lines.size()-1; i++)
+	{
+		//Vec4i line1 = lines[i];
+		//line(res,Point(line1[0], line1[1]), Point(line1[2], line1[3]), Scalar(255, 255, 255), 1);
+		Vec4i tempLine1 = lines[i], tempLine2 = lines[i+1];
+		double tempSlop1 = (double) (tempLine1[3] - tempLine1[1]) / (tempLine1[2] - tempLine1[0]);
+		double tempSlop2 = (double) (tempLine2[3] - tempLine2[1]) / (tempLine2[2] - tempLine2[0]);
+		line1[0] += tempLine1[0];
+		line1[1] += tempLine1[1];
+		line1[2] += tempLine1[2];
+		line1[3] += tempLine1[3];
+		//cout << (double)tempSlop1 << endl << (double)tempSlop2 << endl;
+		if (abs(tempSlop1-tempSlop2) < 0.1)
+		{
+			continue;
+		}
+		else
+		{
+			line1[0] /= (i+1);
+			line1[1] /= (i+1);
+			line1[2] /= (i+1);
+			line1[3] /= (i+1);
+			for (int j=i+1; j<lines.size(); j++)
+			{
+				tempLine2 = lines[j];
+				line2[0] += tempLine2[0]/(lines.size()-i-1);
+				line2[1] += tempLine2[1]/(lines.size()-i-1);
+				line2[2] += tempLine2[2]/(lines.size()-i-1);
+				line2[3] += tempLine2[3]/(lines.size()-i-1);
+			}
+			break;
+		}
+	}
+	line(res,Point(line1[0], line1[1]), Point(line1[2], line1[3]), Scalar(255, 255, 255), 2);
+	line(res,Point(line2[0], line2[1]), Point(line2[2], line2[3]), Scalar(255, 255, 255), 2);
+	cout << 1.0*(line1[3]-line1[1])/(line1[2]-line1[0]) * line1[0];
+	double k1 = 0.0, k2 = 0.0;
+	k1 = 1.0*(line1[3] - line1[1]) / (line1[2] - line1[0]);
+	k2 = 1.0*(line2[3] - line2[1]) / (line2[2] - line2[0]);
+	double interSectionX = (k1*line1[0] - k2*line2[0] + line2[1] - line1[1]) / (k1 - k2);
+	double interSectionY = k1*(interSectionX - line1[0]) + line1[1];
+	circle(res,Point(cvRound(interSectionX), cvRound(interSectionY)), 5, Scalar(255, 255, 255), 3);
+	imshow("res",res);
+	waitKey();
+
+	//namedWindow("binary",1);
+	/*vector<Vec4i> lines;
+	HoughLinesP(binaryimg,lines,1,CV_PI/36,50,50,10);
+	//求得Hough变换获得的直线的均值
 	cout << lines.size();
 	Vec4f resLine;
 	resLine[0] = 0.0;
@@ -221,7 +293,7 @@ int proc(Mat img)
 	resLine[3] /= 7;
 	double k = -1/((resLine[3]-resLine[1])/(resLine[2]-resLine[0]));
 	Point start = bound[0], end = bound[0];
-	
+	//开始逐步进行扫描，step控制两条扫描路径之间的间隔
 	while(start.x <= bound[1].x && start.x >= bound[0].x)
 	{
 		int step = 5;
@@ -269,9 +341,6 @@ int proc(Mat img)
 	}*/
 	
 		
-	
-	imshow("res",res);
-	waitKey();
 
 	
 	
@@ -294,8 +363,7 @@ int proc(Mat img)
 	//cout << "总共用时：" <<　time <<endl;
 
 	//namedWindow("final",1);
-	imshow("final",res);
-	waitKey(100);
+	
 
 	return 0;
 }
