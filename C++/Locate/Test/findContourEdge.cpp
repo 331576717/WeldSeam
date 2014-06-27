@@ -6,364 +6,91 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <direct.h>
 #include <time.h>
-#include  <io.h>
-#include  <stdio.h>
-#include  <stdlib.h>
+#include <io.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <algorithm>
+#include <Windows.h>
+
+#include "ProcessImg.h"
+#include "SendData.h"
+
 using namespace cv;
 using namespace std;
-void rankLines(vector<Vec4i>& lines)
-{
-	for(int i=0; i<lines.size(); i++)
-	{
-		Vec4i l = lines[i];
-		if (l[0] > l[2])
-		{
-			int tempX, tempY;
-			tempX = l[2], tempY = l[3];
-			l[2] = l[0], l[3] = l[1];
-			l[0] = tempX, l[1] = tempY;
-		}
-	}
-}
-bool CompareSlop(Vec4i l1, Vec4i l2)
-{
-	return (l1[3]-l1[1])/(l1[2]-l1[0]) > (l2[3]-l2[1])/(l2[2]-l2[0]); 
-}
-Vector<Point> getBound(Vector<Point> vP)
-{
-	int top = 9999, bottom = 0, left = 9999, right = 0;
-	for(int i=0; i < vP.size(); i++)
-	{
-		if (vP[i].x < left)
-		{
-			left = vP[i].x;
-		}
-		if (vP[i].x > right)
-		{
-			right = vP[i].x;
-		}
-		if (vP[i].y < top)
-		{
-			top = vP[i].y;
-		}
-		if(vP[i].y > bottom)
-		{
-			bottom = vP[i].y;
-		}
-	}
-	Vector<Point> resVec;
-	resVec.push_back(Point(left,top));
-	resVec.push_back(Point(right,bottom));
-	return resVec;
-}
 
-Mat localOTSU(Mat img, Size block)
+HANDLE hTimingMutex;
+HANDLE hProcMutex;
+char buffer[16];
+DWORD WINAPI TimingThread(LPVOID param)
 {
-	Mat res = Mat::zeros((img.size()).height,(img.size()).width,CV_8U);
-	cout << (img.size()).width << endl;
-	for(int i = 0; i < (int)(img.size()).height / block.height; i++)
+	while (true)
 	{
-		for (int j = 0; j < (int)(img.size()).width / block.width; j++)
-		{ 
-			cout << j*block.width << ' ' << i*block.height << ' ' << block.width << ' ' << block.height << endl;
-			//Rect r(0,300,1024,400);
-			Rect r(j*block.width, i*block.height, block.width, block.height);
-			threshold(img(r),img(r),1,100,THRESH_OTSU);
-			//imshow("img",img(r));
-			//cout << j*block.height << ' ' << i*block.width << ' ' << block.width << ' ' << block.height << endl;
-			//waitKey(1000);
-		}
+		WaitForSingleObject(hTimingMutex, INFINITE);
+		//SendData(buffer);
+		cout << "Timing" << endl;
+		ReleaseSemaphore(hProcMutex, 1, NULL);
+		
+		Sleep(500);
+		
 		
 	}
-	imshow("res",img);
-	waitKey();
-	//Mat res = img.clone();
-	return res;
+
 }
-#define  targraycolor1 250
-#define  targraycolor2 200
-int saveImg(Mat mat,int flag)
+DWORD WINAPI ImgProcThread(LPVOID param)
 {
-	//flag=1 不新建文件夹；flag=0新建文件夹
-	char path[100] = "E:\\焊接定位\\pictures\\";
-	time_t t = time(0); 
-	char tmp[64]; 
-	strftime(tmp, sizeof(tmp), "%Y%m%d",localtime(&t) ); 
-	strcat(path,tmp);
-	if(0 == flag && (_access(path,0)==-1))
+	while (true)
 	{
-		_mkdir(path);
+		WaitForSingleObject(hProcMutex, INFINITE);
+		cout << "Processing" << endl;
+		ReleaseSemaphore(hTimingMutex, 1, NULL);
+		Sleep(500);
 	}
-	strftime(tmp, sizeof(tmp), "%H_%M_%S",localtime(&t)); 
-	strcat(path,"\\");
-	strcat(path,tmp);
-	strcat(path,".jpg");
-	int save = cv::imwrite(path,mat);
-	cout << path << (save? " Saved!" : "Can't be saved") << endl;
-	//imwrite(fileName,img);
-	return save;
 }
-int proc(Mat img);
 int main()
 {
+	HANDLE m_hCom;
+	hTimingMutex = CreateSemaphore(NULL, 1, 1, NULL);
+	hProcMutex = CreateSemaphore(NULL, 0, 1, NULL);
 	
+	CreateThread(NULL, 0, TimingThread, NULL, NULL, NULL);
+	CreateThread(NULL, 0, ImgProcThread, NULL, NULL, NULL);
+
+	//cout << "begin" << endl;
+	//ReleaseMutex(hProcMutex);
+	Sleep(50000);
 	//std::ios::sync_with_stdio(false);
 	//IplImage* pFrame = NULL;
 
 	//获取摄像头
 	//CvCapture* pCapture = cvCreateCameraCapture(-1);
 
-	VideoCapture cap(0); // open the default camera
+	//VideoCapture cap(0); // open the default camera
 	//cap.set(CV_CAP_PROP_FRAME_WIDTH,1024.0);
 	//cap.set(CV_CAP_PROP_FRAME_HEIGHT,768.0);
 	
-	int intCount  = 0;
-	for(;;)
-	{
+	//int intCount  = 0;
+	//for(;;)
+	//{
 		//pFrame=cvQueryFrame( pCapture );
 		//if(!pFrame)break;
 		//cvShowImage("video",pFrame);
-		Mat frame = imread("E:\\焊接定位\\pictures\\20140609\\18_41_22.jpg");
+		//Mat frame = imread("E:\\焊接定位\\pictures\\20140609\\18_41_22.jpg");
 		//cap >> frame; // get a new frame from camera
 		//cvtColor(frame, frame, CV_BGR2GRAY);
 		//GaussianBlur(frame, frame, Size(7,7), 1.5, 1.5);
 		//Canny(frame, frame, 0, 30, 3);
 		
-		proc(frame);
-		imshow("img",frame);
-		char c=cvWaitKey(15);
+		//ProcessImg(frame);
+		//imshow("img",frame);
+		//char c=cvWaitKey(15);
 		
-		if(c=='s')
+		/*if(c=='s')
 		{
-			saveImg(frame,intCount);
+			SaveImg(frame,intCount);
 			intCount++;
 		}
-	}
-	
+	}*/
 	
 	return 0;
 }
 
-int proc(Mat img)
-//int proc(string picName)
-{
-	//统计程序用时
-	//double time = 0;
-	//time = (double)getTickCount();
-
-	//声明IplImage指针
-	
-	//Mat img = imread(picName,CV_LOAD_IMAGE_COLOR);
-	if (!img.data)
-	{
-		cout << "read image error!" << endl;
-		return 1;
-	}
-	/*namedWindow("sourse",1);
-	imshow("sourse", img);*/
-	//Mat background = imread("background.jpg");
-	
-	Mat res;
-	res = img.clone();
-	//addWeighted( img, 1, background, -1, 0.0, img);
-	imshow("res",img);
-	waitKey();
-	Mat grayimg;
-	cvtColor(img,grayimg,CV_RGB2GRAY);
-	
-	GaussianBlur(grayimg,grayimg,Size(13,13),0.5,0.5);
-
-	medianBlur(grayimg,grayimg,7);
-	//namedWindow("grayimg",1);
-	imshow("grayimg", grayimg);
-	waitKey();
-
-	Mat binaryimg; //= grayimg < 100;
-	localOTSU(grayimg,Size(60,60));
-	//cv::threshold(grayimg,binaryimg,50,70,THRESH_OTSU);
-	//cv::adaptiveThreshold(grayimg,binaryimg,255,cv::THRESH_BINARY_INV,cv::ADAPTIVE_THRESH_GAUSSIAN_C,31,30);
-	//binaryimg = (grayimg>65);
-	imshow("bw",binaryimg);
-	waitKey();
-	/*vector<vector<Point>> contous;
-	findContours(binaryimg,contous,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
-	//contous.
-	//测试总共检测到的轮廓数
-	//cout << "contous size:" << contous.size() << endl;
-	Vector<Point> bound;
-	for (int i=0; i < contous.size(); i++)
-	{
-		//通过轮廓边缘像素数做第一步过滤（还差像素区域平均值过滤）
-		if (contourArea(contous[i]) < 18000 && contourArea(contous[i]) > 100)
-		{
-			//cout << "contou area:" << cv::contourArea(*iter)<<endl;
-			//tarcontous.push_back(*iter);
-			drawContours(binaryimg,contous,i,Scalar(255,255,255),-1);
-			bound = getBound(contous[i]);
-			//框定扫描范围
-			line(res, bound[0], Point(bound[1].x, bound[0].y), Scalar(255,0,0),1);
-			line(res, bound[0], Point(bound[0].x, bound[1].y), Scalar(255,0,0),1);
-			line(res, Point(bound[0].x, bound[1].y), bound[1], Scalar(255,0,0),1);
-			line(res, Point(bound[1].x, bound[0].y), bound[1], Scalar(255,0,0),1);
-			//imshow("bound",res);
-			//waitKey();
-			cout << contourArea(contous[i]) << endl;
-		}
-		else
-			drawContours(binaryimg,contous,i,Scalar(0,0,0),-1);
-		i++;
-	}*/
-	//medianBlur(binaryimg,binaryimg,3);
-	
-	//Canny(binaryimg,binaryimg,10,80);
-	vector<Vec4i> lines;
-	HoughLinesP(binaryimg,lines,1,CV_PI/36,50,50,10);
-	rankLines(lines);
-	sort(lines.begin(),lines.end(),CompareSlop);
-	Vec4i line1,line2;
-	for(int i=0; i<4; i++)
-		line1[i] = line2[i] = 0;
-	for (int i=0; i<lines.size()-1; i++)
-	{
-		//Vec4i line1 = lines[i];
-		//line(res,Point(line1[0], line1[1]), Point(line1[2], line1[3]), Scalar(255, 255, 255), 1);
-		Vec4i tempLine1 = lines[i], tempLine2 = lines[i+1];
-		double tempSlop1 = (double) (tempLine1[3] - tempLine1[1]) / (tempLine1[2] - tempLine1[0]);
-		double tempSlop2 = (double) (tempLine2[3] - tempLine2[1]) / (tempLine2[2] - tempLine2[0]);
-		line1[0] += tempLine1[0];
-		line1[1] += tempLine1[1];
-		line1[2] += tempLine1[2];
-		line1[3] += tempLine1[3];
-		//cout << (double)tempSlop1 << endl << (double)tempSlop2 << endl;
-		if (abs(tempSlop1-tempSlop2) < 0.1)
-		{
-			continue;
-		}
-		else
-		{
-			line1[0] /= (i+1);
-			line1[1] /= (i+1);
-			line1[2] /= (i+1);
-			line1[3] /= (i+1);
-			for (int j=i+1; j<lines.size(); j++)
-			{
-				tempLine2 = lines[j];
-				line2[0] += tempLine2[0]/(lines.size()-i-1);
-				line2[1] += tempLine2[1]/(lines.size()-i-1);
-				line2[2] += tempLine2[2]/(lines.size()-i-1);
-				line2[3] += tempLine2[3]/(lines.size()-i-1);
-			}
-			break;
-		}
-	}
-	line(res,Point(line1[0], line1[1]), Point(line1[2], line1[3]), Scalar(255, 255, 255), 2);
-	line(res,Point(line2[0], line2[1]), Point(line2[2], line2[3]), Scalar(255, 255, 255), 2);
-	cout << 1.0*(line1[3]-line1[1])/(line1[2]-line1[0]) * line1[0];
-	double k1 = 0.0, k2 = 0.0;
-	k1 = 1.0*(line1[3] - line1[1]) / (line1[2] - line1[0]);
-	k2 = 1.0*(line2[3] - line2[1]) / (line2[2] - line2[0]);
-	double interSectionX = (k1*line1[0] - k2*line2[0] + line2[1] - line1[1]) / (k1 - k2);
-	double interSectionY = k1*(interSectionX - line1[0]) + line1[1];
-	circle(res,Point(cvRound(interSectionX), cvRound(interSectionY)), 5, Scalar(255, 255, 255), 3);
-	imshow("res",res);
-	waitKey();
-
-	//namedWindow("binary",1);
-	/*vector<Vec4i> lines;
-	HoughLinesP(binaryimg,lines,1,CV_PI/36,50,50,10);
-	//求得Hough变换获得的直线的均值
-	cout << lines.size();
-	Vec4f resLine;
-	resLine[0] = 0.0;
-	resLine[1] = 0.0;
-	resLine[2] = 0.0;
-	resLine[3] = 0.0;
-	for( size_t i = 0; i < lines.size(); i++ )
-	{
-		Vec4i l = lines[i];
-		resLine[0] += l[0];
-		resLine[1] += l[1];
-		resLine[2] += l[2];
-		resLine[3] += l[3];
-	}
-	resLine[0] /= 7;
-	resLine[1] /= 7;
-	resLine[2] /= 7;
-	resLine[3] /= 7;
-	double k = -1/((resLine[3]-resLine[1])/(resLine[2]-resLine[0]));
-	Point start = bound[0], end = bound[0];
-	//开始逐步进行扫描，step控制两条扫描路径之间的间隔
-	while(start.x <= bound[1].x && start.x >= bound[0].x)
-	{
-		int step = 5;
-		int j=1;
-		int count=0;
-		Point center = Point(0,0);
-		while(end.y <= bound[1].y && end.y >= bound[0].y)
-		{
-			end.x -= 1;
-			end.y = cvRound(k * (start.x-1*j) + start.y - k * start.x);
-			if(255 == (int)binaryimg.at<uchar>(Point(end.x,end.y)) && count < 2)
-			{
-				center.x += end.x/2;
-				center.y += end.y/2;
-				count++;
-				if(2 == count)
-				circle(res,Point(center.x,center.y),1,Scalar(255,255,255));	
-			}
-			
-			//circle(res,Point(end.x,end.y),0.5,Scalar(255,255,255));
-			//line(binaryimg, Point(cvRound(start.x), cvRound(start.y)), Point(cvRound(end.x), cvRound(end.y)), Scalar(255,255,255), 1, CV_AA);
-			j++;
-		}
-		start.x += step;
-		end = start;
-		//cout << i << endl;
-	}
-	imshow("process",res);
-	waitKey();
-	
-	//float theta = 0;
-	/*for( size_t i = 0; i < lines.size(); i++ )
-	{
-		float rho = lines[i][0];
-		float theta = lines[i][1];
-		theta = lines[i][1];
-		//cout << theta;
-		double a = cos(theta), b = sin(theta);
-		double x0 = a*rho, y0 = b*rho;
-		Point pt1(cvRound(x0 + 1000*(-b)),
-			cvRound(y0 + 1000*(a)));
-		Point pt2(cvRound(x0 - 1000*(-b)),
-			cvRound(y0 - 1000*(a)));
-		line( res, pt1, pt2, Scalar(0,0,255), 1, 8 );
-	}*/
-	
-		
-
-	
-	
-	//将轮廓画出   
-	
-	//drawContours(img,tarcontous,-1,Scalar(0,255,0),CV_FILLED);
-	//cout<<"bianary chanel:"<<binaryimg.channels()<<endl;
-	//cout<<"grayimg chanel:"<<grayimg.channels()<<endl;
-	
-	//将目标区域标注成特定灰度值，然后按既定灰度值寻找元素
-	//drawContours(binaryimg,tarcontous,0,Scalar(targraycolor1),CV_FILLED);
-	//drawContours(binaryimg,tarcontous,0,Scalar(targraycolor1),);
-	//drawContours(binaryimg,tarcontous,1,Scalar(targraycolor2),CV_FILLED);
-
-	/*namedWindow("result",1);
-	imshow("result",binaryimg);*/
-
-	//time = 1000*((double)getTickCount() - time)/getTickFrequency();
-	//cout <<"用时："<< time <<endl;
-	//cout << "总共用时：" <<　time <<endl;
-
-	//namedWindow("final",1);
-	
-
-	return 0;
-}

@@ -18,6 +18,12 @@
     <ClInclude Include="BFS.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="ProcessImg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="SendData.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="findContourEdge.cpp">
