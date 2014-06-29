@@ -7,12 +7,13 @@
 using namespace std;
 using namespace std;
 
-bool InitCom(HANDLE& m_hCom);
-bool SendData(char* buffer);
-bool InitCom(HANDLE& m_hCom)
+bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped);
+bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer);
+bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 {
 	//第一步，打开串口
-	m_hCom = CreateFile((WCHAR*)_T("com4"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	//HANDLE m_hCom;
+	m_hCom = CreateFile((WCHAR*)_T("com5"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 	if (m_hCom == INVALID_HANDLE_VALUE)
 	{
 		std::cout << "CreateFile fail!" << endl;
@@ -57,39 +58,45 @@ bool InitCom(HANDLE& m_hCom)
 		CloseHandle(m_hCom);
 		return -1;
 	}
-	/*if (SetCommState(m_hCom, &dcb))
+	if (SetCommState(m_hCom, &dcb))
 	{
-	cout << "SetCommState OK!" << endl;
-	}*/
+		//cout << "SetCommState OK!" << endl;
+	}
 
 	//第五步，建立并初始化重叠结构
-	OVERLAPPED wrOverlapped;
 	ZeroMemory(&wrOverlapped, sizeof(wrOverlapped));
 	if (wrOverlapped.hEvent != NULL)
 	{
 		ResetEvent(wrOverlapped.hEvent);
 		wrOverlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	}
+	
 }
 bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer)
 {
-	string s;
+	
 	//第七步，发送数据
 	//y = 80000(16# 00 01 38 80),VB2004~VB2007,VD2004;
-
 	// send data 30000/80000
 	// 10#30000~16# 00 00 75 30
+	/*char buffer[16];
 	buffer[0] = 0x00;
 	buffer[1] = 0x00;
-	buffer[2] = 0x75;
-	buffer[3] = 0x30;
-
-	// 10#80000~16# 00 01 38 80
-	buffer[4] = 0x00;
-	buffer[5] = 0x01;
-	buffer[6] = 0x38;
-	buffer[7] = 0x80;
-
+	buffer[2] = 0x00;
+	buffer[3] = 0x64;*/
+	//cout << "subFunc:" << buffer[0] << endl;
+	
+	DWORD dwerrorflag;
+	COMSTAT comstat;
+	DWORD writenumber = 1024;
+	DWORD dwhavewrite;
+	bool error = WriteFile(m_hCom, buffer, writenumber, &dwhavewrite, &wrOverlapped);
+	return error;
+	//// 10#80000~16# 00 01 38 80
+	//buffer[4] = 0x00;
+	//buffer[5] = 0x01;
+	//buffer[6] = 0x38;
+	//buffer[7] = 0x80;
 
 	/* 80000/30000
 	buffer[8] = 0x00;
@@ -101,11 +108,6 @@ bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer)
 	buffer[14] = 0x75;
 	buffer[15] = 0x30;*/
 
-	DWORD dwerrorflag;
-	COMSTAT comstat;
-	DWORD writenumber = 1024;
-	DWORD dwhavewrite;
-	return WriteFile(m_hCom, &buffer, writenumber, &dwhavewrite, &wrOverlapped);
 }
 	
 

@@ -17,20 +17,21 @@
 
 using namespace cv;
 using namespace std;
-
-HANDLE hTimingMutex;
-HANDLE hProcMutex;
 char buffer[16];
+HANDLE hTimingSemaphore;
+HANDLE hProcSemaphore;
+HANDLE m_hCom;
+OVERLAPPED wrOverlapped;
 DWORD WINAPI TimingThread(LPVOID param)
 {
 	while (true)
 	{
-		WaitForSingleObject(hTimingMutex, INFINITE);
-		//SendData(buffer);
+		WaitForSingleObject(hTimingSemaphore, INFINITE);
+		SendData(m_hCom, wrOverlapped, buffer);
 		cout << "Timing" << endl;
-		ReleaseSemaphore(hProcMutex, 1, NULL);
+		ReleaseSemaphore(hProcSemaphore, 1, NULL);
 		
-		Sleep(500);
+		Sleep(2000);
 		
 		
 	}
@@ -40,23 +41,43 @@ DWORD WINAPI ImgProcThread(LPVOID param)
 {
 	while (true)
 	{
-		WaitForSingleObject(hProcMutex, INFINITE);
+		WaitForSingleObject(hProcSemaphore, INFINITE);
+		buffer[1] += 1;
 		cout << "Processing" << endl;
-		ReleaseSemaphore(hTimingMutex, 1, NULL);
-		Sleep(500);
+		ReleaseSemaphore(hTimingSemaphore, 1, NULL);
+		//Sleep(500);
 	}
 }
 int main()
 {
-	HANDLE m_hCom;
-	hTimingMutex = CreateSemaphore(NULL, 1, 1, NULL);
-	hProcMutex = CreateSemaphore(NULL, 0, 1, NULL);
+
+	bool ini = InitCom(m_hCom, wrOverlapped);
+	for (int i = 0; i < 10; i++)
+	{
+		buffer[0] = '1';
+		//X=3000
+		buffer[1] = 0x00;
+		buffer[2] = 0x00;
+		buffer[3] = 0x0B;
+		buffer[4] = 0xB8+i;
+		//Y=3000
+		buffer[5] = 0x00;
+		buffer[6] = 0x00;
+		buffer[7] = 0x0B;
+		buffer[8] = 0xB8+2*i;
+		buffer[9] = '\n';
+		bool error = SendData(m_hCom, wrOverlapped, buffer);
+		cout << error << endl;
+	}
+	
+	hTimingSemaphore = CreateSemaphore(NULL, 1, 1, NULL);
+	hProcSemaphore = CreateSemaphore(NULL, 0, 1, NULL);
 	
 	CreateThread(NULL, 0, TimingThread, NULL, NULL, NULL);
 	CreateThread(NULL, 0, ImgProcThread, NULL, NULL, NULL);
 
 	//cout << "begin" << endl;
-	//ReleaseMutex(hProcMutex);
+	//ReleaseSemaphore(hProcSemaphore);
 	Sleep(50000);
 	//std::ios::sync_with_stdio(false);
 	//IplImage* pFrame = NULL;
