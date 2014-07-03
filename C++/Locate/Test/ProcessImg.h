@@ -1,9 +1,9 @@
-#include<Vector>
+#include<vector>
 #include <deque>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
-
+#include <iostream>
 using namespace cv;
 using namespace std;
 
@@ -15,7 +15,7 @@ Mat localOTSU(Mat img, Size block);
 
 Vector<Point> getBound(Vector<Point> vP);
 
-void rankLines(vector<Vec4i>& lines);
+void RankLines(vector<Vec4i>& lines);
 
 bool CompareSlop(Vec4i l1, Vec4i l2);
 int SaveImg(Mat mat, int flag)
@@ -50,11 +50,11 @@ int ProcessImg(Mat img)
 	//声明IplImage指针
 
 	//Mat img = imread(picName,CV_LOAD_IMAGE_COLOR);
-	if (!img.data)
+	/*if (!img.data)
 	{
 		cout << "read image error!" << endl;
-		return 1;
-	}
+		return ;
+	}*/
 	/*namedWindow("sourse",1);
 	imshow("sourse", img);*/
 	//Mat background = imread("background.jpg");
@@ -78,7 +78,7 @@ int ProcessImg(Mat img)
 	//localOTSU(grayimg,Size(60,60));
 	//cv::threshold(grayimg,binaryimg,50,70,THRESH_OTSU);
 	//cv::adaptiveThreshold(grayimg,binaryimg,255,cv::THRESH_BINARY_INV,cv::ADAPTIVE_THRESH_GAUSSIAN_C,31,30);
-	binaryimg = (grayimg>65);
+	binaryimg = (grayimg>25);
 	//imshow("bw",binaryimg);
 	//waitKey();
 	/*vector<vector<Point>> contous;
@@ -110,15 +110,25 @@ int ProcessImg(Mat img)
 	i++;
 	}*/
 	//medianBlur(binaryimg,binaryimg,3);
-
+	
 	//Canny(binaryimg,binaryimg,10,80);
 	vector<Vec4i> lines;
-	HoughLinesP(binaryimg, lines, 1, CV_PI / 36, 50, 50, 10);
-	rankLines(lines);
-	sort(lines.begin(), lines.end(), CompareSlop);
+	HoughLinesP(binaryimg, lines, 1, CV_PI / 180, 50, 50, 10);
+	//RankLines(lines);
+	//sort(lines.begin(), lines.end(), CompareSlop);
+	return 0;
+	for (int i = 0; i < lines.size(); i++)
+	{
+		Vec4i  tempLine = lines[i];
+		line(res, Point(tempLine[0], tempLine[1]), Point(tempLine[2], tempLine[3]), Scalar(0, 255, 0), 1);
+	}
+	//imshow("Res", res);
+	//waitKey();
+
 	Vec4i line1, line2;
 	for (int i = 0; i<4; i++)
 		line1[i] = line2[i] = 0;
+
 	for (int i = 0; i<lines.size() - 1; i++)
 	{
 		//Vec4i line1 = lines[i];
@@ -131,7 +141,7 @@ int ProcessImg(Mat img)
 		line1[2] += tempLine1[2];
 		line1[3] += tempLine1[3];
 		//cout << (double)tempSlop1 << endl << (double)tempSlop2 << endl;
-		if (abs(tempSlop1 - tempSlop2) < 0.1)
+		if (abs(tempSlop1 - tempSlop2) < 0.3)
 		{
 			continue;
 		}
@@ -152,6 +162,7 @@ int ProcessImg(Mat img)
 			break;
 		}
 	}
+
 	line(res, Point(line1[0], line1[1]), Point(line1[2], line1[3]), Scalar(255, 255, 255), 2);
 	line(res, Point(line2[0], line2[1]), Point(line2[2], line2[3]), Scalar(255, 255, 255), 2);
 	//cout << 1.0*(line1[3]-line1[1])/(line1[2]-line1[0]) * line1[0];
@@ -160,10 +171,14 @@ int ProcessImg(Mat img)
 	k2 = 1.0*(line2[3] - line2[1]) / (line2[2] - line2[0]);
 	double interSectionX = (k1*line1[0] - k2*line2[0] + line2[1] - line1[1]) / (k1 - k2);
 	double interSectionY = k1*(interSectionX - line1[0]) + line1[1];
+
 	cout << "X:" << cvRound(interSectionX) << "  Y:" << cvRound(interSectionY) << endl;
 	circle(res, Point(cvRound(interSectionX), cvRound(interSectionY)), 5, Scalar(255, 255, 255), 3);
-	imshow("res", res);
-	waitKey();
+	
+	Point resPoint(3,6);
+	return 0;
+	//imshow("res", res);
+	//waitKey();
 
 	//namedWindow("binary",1);
 	/*vector<Vec4i> lines;
@@ -236,10 +251,6 @@ int ProcessImg(Mat img)
 	line( res, pt1, pt2, Scalar(0,0,255), 1, 8 );
 	}*/
 
-
-
-
-
 	//将轮廓画出   
 
 	//drawContours(img,tarcontous,-1,Scalar(0,255,0),CV_FILLED);
@@ -261,7 +272,7 @@ int ProcessImg(Mat img)
 	//namedWindow("final",1);
 
 
-	return 0;
+	
 }
 
 Mat localOTSU(Mat img, Size block)
@@ -316,7 +327,7 @@ Vector<Point> getBound(Vector<Point> vP)
 	return resVec;
 }
 
-void rankLines(vector<Vec4i>& lines)
+void RankLines(vector<Vec4i>& lines)
 {
 	for (int i = 0; i<lines.size(); i++)
 	{
