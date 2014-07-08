@@ -5,10 +5,19 @@
 #include  <string>
 #include <atlbase.h>
 using namespace std;
-using namespace std;
+
+struct Speed
+{ 
+	int xSpeed; int ySpeed; int zSpeed; 
+
+	Speed(int x, int y, int z) : xSpeed(x), ySpeed(y), zSpeed(z){} 
+
+};
 
 bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped);
 bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer);
+void FormateData(Point3i pt, Speed speed, char* buffer);
+
 bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 {
 	//第一步，打开串口
@@ -110,4 +119,44 @@ bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer)
 
 }
 	
+void FormateData(Point3i pt, Speed speed, char* buffer)
+{
+	buffer[0] = 0x07;
+	//X
+	buffer[1] = pt.x >> 24;
+	buffer[2] = (pt.x >> 16) & 255;
+	buffer[3] = (pt.x >> 8) & 255;
+	buffer[4] = pt.x & 255;
+	//Y
+	buffer[5] = pt.y >> 24;
+	buffer[6] = (pt.y >> 16) & 255;
+	buffer[7] = (pt.y >> 8) & 255;
+	buffer[8] = pt.y & 255;
+	//Z
+	buffer[9] = pt.z >> 24;
+	buffer[10] = (pt.z >> 16) & 255;
+	buffer[11] = (pt.z >> 8) & 255;
+	buffer[12] = pt.z & 255;
+
+	//xSPEED
+	buffer[13] = speed.xSpeed >> 24;
+	buffer[14] = (speed.xSpeed >> 16) & 255;
+	buffer[15] = (speed.xSpeed >> 8) & 255;
+	buffer[16] = speed.xSpeed & 255;
+
+	//ySPEED
+	buffer[17] = speed.ySpeed >> 24;
+	buffer[18] = (speed.ySpeed >> 16) & 255;
+	buffer[19] = (speed.ySpeed >> 8) & 255;
+	buffer[20] = speed.ySpeed & 255;
+
+	//zSPEED
+	buffer[21] = speed.zSpeed >> 24;
+	buffer[22] = (speed.zSpeed >> 16) & 255;
+	buffer[23] = (speed.zSpeed >> 8) & 255;
+	buffer[24] = speed.zSpeed & 255;
+
+	buffer[25] = '\n';
+
+}
 

@@ -4,12 +4,13 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
+
 using namespace cv;
 using namespace std;
 
 int SaveImg(Mat mat, int flag);
 
-int ProcessImg(Mat img);
+Point ProcessImg(Mat img);
 
 Mat localOTSU(Mat img, Size block);
 
@@ -17,7 +18,7 @@ Vector<Point> getBound(Vector<Point> vP);
 
 void RankLines(vector<Vec4i>& lines);
 
-bool CompareSlop(Vec4i l1, Vec4i l2);
+bool CompareSlop(Vec2f l1, Vec2f l2);
 int SaveImg(Mat mat, int flag)
 {
 	//flag=1 不新建文件夹；flag=0新建文件夹
@@ -40,7 +41,7 @@ int SaveImg(Mat mat, int flag)
 	return save;
 }
 
-int ProcessImg(Mat img)
+Point ProcessImg(Mat img)
 //int proc(string picName)
 {
 	//统计程序用时
@@ -112,36 +113,31 @@ int ProcessImg(Mat img)
 	//medianBlur(binaryimg,binaryimg,3);
 	
 	//Canny(binaryimg,binaryimg,10,80);
-	vector<Vec4i> lines;
-	HoughLinesP(binaryimg, lines, 1, CV_PI / 180, 50, 50, 10);
+	vector<Vec2f> lines;
+	HoughLines(binaryimg, lines, 1, CV_PI / 180, 150, 0, 0);
+	//vector<Vec4i> lines;
+	//HoughLinesP(binaryimg, lines, 1, CV_PI / 180, 50, 50, 10);
 	//RankLines(lines);
-	//sort(lines.begin(), lines.end(), CompareSlop);
-	return 0;
-	for (int i = 0; i < lines.size(); i++)
-	{
-		Vec4i  tempLine = lines[i];
-		line(res, Point(tempLine[0], tempLine[1]), Point(tempLine[2], tempLine[3]), Scalar(0, 255, 0), 1);
-	}
+	sort(lines.begin(), lines.end(), CompareSlop);
+	
 	//imshow("Res", res);
 	//waitKey();
 
-	Vec4i line1, line2;
-	for (int i = 0; i<4; i++)
-		line1[i] = line2[i] = 0;
+	Vec2f line1, line2;
+	for (int i = 0; i<2; i++)
+		line1[i] = line2[i] = 0.0;
 
 	for (int i = 0; i<lines.size() - 1; i++)
 	{
 		//Vec4i line1 = lines[i];
 		//line(res,Point(line1[0], line1[1]), Point(line1[2], line1[3]), Scalar(255, 255, 255), 1);
-		Vec4i tempLine1 = lines[i], tempLine2 = lines[i + 1];
-		double tempSlop1 = (double)(tempLine1[3] - tempLine1[1]) / (tempLine1[2] - tempLine1[0]);
-		double tempSlop2 = (double)(tempLine2[3] - tempLine2[1]) / (tempLine2[2] - tempLine2[0]);
+		Vec2f tempLine1 = lines[i], tempLine2 = lines[i + 1];
+		
 		line1[0] += tempLine1[0];
 		line1[1] += tempLine1[1];
-		line1[2] += tempLine1[2];
-		line1[3] += tempLine1[3];
+		
 		//cout << (double)tempSlop1 << endl << (double)tempSlop2 << endl;
-		if (abs(tempSlop1 - tempSlop2) < 0.3)
+		if (abs(tempLine1[1] - tempLine2[1]) < 0.3)
 		{
 			continue;
 		}
@@ -149,34 +145,36 @@ int ProcessImg(Mat img)
 		{
 			line1[0] /= (i + 1);
 			line1[1] /= (i + 1);
-			line1[2] /= (i + 1);
-			line1[3] /= (i + 1);
+			
 			for (int j = i + 1; j<lines.size(); j++)
 			{
 				tempLine2 = lines[j];
 				line2[0] += tempLine2[0] / (lines.size() - i - 1);
 				line2[1] += tempLine2[1] / (lines.size() - i - 1);
-				line2[2] += tempLine2[2] / (lines.size() - i - 1);
-				line2[3] += tempLine2[3] / (lines.size() - i - 1);
 			}
 			break;
 		}
 	}
 
-	line(res, Point(line1[0], line1[1]), Point(line1[2], line1[3]), Scalar(255, 255, 255), 2);
-	line(res, Point(line2[0], line2[1]), Point(line2[2], line2[3]), Scalar(255, 255, 255), 2);
+	//line(res, Point(line1[0], line1[1]), Point(line1[2], line1[3]), Scalar(255, 255, 255), 2);
+	//line(res, Point(line2[0], line2[1]), Point(line2[2], line2[3]), Scalar(255, 255, 255), 2);
 	//cout << 1.0*(line1[3]-line1[1])/(line1[2]-line1[0]) * line1[0];
-	double k1 = 0.0, k2 = 0.0;
-	k1 = 1.0*(line1[3] - line1[1]) / (line1[2] - line1[0]);
-	k2 = 1.0*(line2[3] - line2[1]) / (line2[2] - line2[0]);
-	double interSectionX = (k1*line1[0] - k2*line2[0] + line2[1] - line1[1]) / (k1 - k2);
-	double interSectionY = k1*(interSectionX - line1[0]) + line1[1];
+	//double k1 = 0.0, k2 = 0.0;
+	//k1 = 1.0*(line1[3] - line1[1]) / (line1[2] - line1[0]);
+	//k2 = 1.0*(line2[3] - line2[1]) / (line2[2] - line2[0]);
+	//double interSectionX = (k1*line1[0] - k2*line2[0] + line2[1] - line1[1]) / (k1 - k2);
+	//double interSectionY = k1*(interSectionX - line1[0]) + line1[1];
 
-	cout << "X:" << cvRound(interSectionX) << "  Y:" << cvRound(interSectionY) << endl;
-	circle(res, Point(cvRound(interSectionX), cvRound(interSectionY)), 5, Scalar(255, 255, 255), 3);
-	
-	Point resPoint(3,6);
-	return 0;
+	//cout << "X:" << cvRound(interSectionX) << "  Y:" << cvRound(interSectionY) << endl;
+	double interSectionX = (line2[0] * sin(line1[1]) - line1[0] * sin(line2[1])) / 
+					(sin(line1[1]) * cos(line2[1]) - sin(line2[1]) * cos(line1[1]));
+	double interSectionY = (line1[0] * cos(line2[1]) - line2[0] * cos(line1[1])) /
+					(sin(line1[1]) * cos(line2[1]) - sin(line2[1]) * cos(line1[1]));
+	//circle(res, Point(cvRound(interSectionX), cvRound(interSectionY)), 5, Scalar(255, 255, 255), 3);
+	//imshow("RES", res);
+	//waitKey();
+	Point p(cvRound(interSectionX), cvRound(interSectionY));
+	return p;
 	//imshow("res", res);
 	//waitKey();
 
@@ -343,9 +341,9 @@ void RankLines(vector<Vec4i>& lines)
 	}
 }
 
-bool CompareSlop(Vec4i l1, Vec4i l2)
+bool CompareSlop(Vec2f l1, Vec2f l2)
 {
-	return (l1[3] - l1[1]) / (l1[2] - l1[0]) > (l2[3] - l2[1]) / (l2[2] - l2[0]);
+	return l2[1] > l1[1];
 }
 
 
