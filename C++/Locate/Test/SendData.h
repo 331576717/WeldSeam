@@ -4,7 +4,10 @@
 #include  <iostream>
 #include  <string>
 #include <atlbase.h>
+#include <opencv2\core\core.hpp>
+
 using namespace std;
+using namespace cv;
 
 struct Speed
 { 
@@ -15,8 +18,8 @@ struct Speed
 };
 
 bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped);
-bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer);
-void FormateData(Point3i pt, Speed speed, char* buffer);
+bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int bufferSize);
+void FormateData(Point3i pt, Speed speed, char* buffer, int bufferSize);
 
 bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 {
@@ -26,7 +29,7 @@ bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 	if (m_hCom == INVALID_HANDLE_VALUE)
 	{
 		std::cout << "CreateFile fail!" << endl;
-		return -1;
+		return false;
 	}
 	//cout << "CreateFile OK!" << endl;
 
@@ -35,7 +38,7 @@ bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 	{
 		cout << "SetupComm fail! Close Comm!" << endl;
 		CloseHandle(m_hCom);
-		return -1;
+		return false;
 	}
 	//cout << "SetupComm OK!" << endl;
 
@@ -46,7 +49,7 @@ bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 	TimeOuts.ReadTotalTimeoutConstant = 0;
 	TimeOuts.ReadTotalTimeoutMultiplier = 0;
 	TimeOuts.WriteTotalTimeoutConstant = 2000;
-	TimeOuts.WriteTotalTimeoutMultiplier = 50;
+	TimeOuts.WriteTotalTimeoutMultiplier = 2000;
 	SetCommTimeouts(m_hCom, &TimeOuts);
 
 	//第四步，设置串口参数
@@ -55,7 +58,7 @@ bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 	{
 		cout << "GetCommState fail! Comm close" << endl;
 		CloseHandle(m_hCom);
-		return -1;
+		return false;
 	}
 	//cout << "GetCommState OK!" << endl;
 
@@ -65,7 +68,7 @@ bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 		//参数修改错误，进行错误处理
 		cout << "BuileCOmmDCB fail,Comm close!" << endl;
 		CloseHandle(m_hCom);
-		return -1;
+		return false;
 	}
 	if (SetCommState(m_hCom, &dcb))
 	{
@@ -81,7 +84,7 @@ bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 	}
 	
 }
-bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer)
+bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int bufferSize)
 {
 	
 	//第七步，发送数据
@@ -97,8 +100,9 @@ bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer)
 	
 	DWORD dwerrorflag;
 	COMSTAT comstat;
-	DWORD writenumber = 1024;
+	DWORD writenumber = bufferSize;
 	DWORD dwhavewrite;
+
 	bool error = WriteFile(m_hCom, buffer, writenumber, &dwhavewrite, &wrOverlapped);
 	return error;
 	//// 10#80000~16# 00 01 38 80
@@ -119,7 +123,7 @@ bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer)
 
 }
 	
-void FormateData(Point3i pt, Speed speed, char* buffer)
+void FormateData(Point3i pt, Speed speed, char* buffer, int bufferSize = 0)
 {
 	buffer[0] = 0x07;
 	//X

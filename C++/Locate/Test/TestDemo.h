@@ -30,3 +30,8 @@ int TestHoughLines(Mat img)
 	return 0;
 
 }
+
+void TestSendData()
+{
+
+}

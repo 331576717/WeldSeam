@@ -37,7 +37,7 @@ DWORD WINAPI TimingThread(LPVOID param)
 	while (true)
 	{
 		WaitForSingleObject(g_hTimingSemaphore, INFINITE);
-		SendData(g_hCom, g_wrOverlapped, g_buffer);
+		SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 		cout << "Timing" << endl;
 		ReleaseSemaphore(g_hProcSemaphore, 1, NULL);
 		
@@ -66,13 +66,13 @@ DWORD WINAPI ImgProcThread(LPVOID param)
 void StartWeld()
 {
 	FormateData(Point3i(8000, 4000, 0), Speed(3000, 3000, 3000), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(10000);
 	FormateData(Point3i(8000, 4000, 17000), Speed(3000, 3000, 40000), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(1100);
 	FormateData(Point3i(8000, 4000, 15000), Speed(3000, 3000, 20000), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(1100);
 	FormateData(g_vP[g_pointCount], g_vS[g_pointCount], g_buffer);
 	g_pointCount++;
@@ -82,16 +82,16 @@ void StartWeld()
 void StartWeldTest()
 {
 	FormateData(Point3i(15000, 5000, 0), Speed(20000, 20000, 3000), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(10000);
 	FormateData(Point3i(15000, 5000, 17500), Speed(3000, 3000, 30000), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
  	Sleep(1100);
 	FormateData(Point3i(15000, 5000, 16000), Speed(3000, 3000, 30000), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(1100);
 	FormateData(Point3i(150000, 2000, 61000), Speed(3300, 3300, 1000), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	//FormateData(g_vP[g_pointCount], Speed(2000,2000,1000), g_buffer);
 	//g_pointCount++;
 	VideoCapture cap(0); // open the default camera
@@ -110,25 +110,25 @@ void StartWeldTest()
 	}
 	//Sleep(40000);
 	FormateData(Point3i(150000, 2000, 0), Speed(3300, 3300, 20000), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 }
 
 int main()
 {
-	bool flag = false;
 	bool ini = InitCom(g_hCom, g_wrOverlapped);
-
+	bool flag = true;
 	FormateData(Point3i(10, 10, 10), Speed(3300, 3300, 0), g_buffer);
-	flag = SendData(g_hCom, g_wrOverlapped, g_buffer);
+	flag = SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	cout << flag << endl;
 
 	FormateData(Point3i(20000, 0, 0), Speed(3300, 3300, 0), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	cout << flag << endl;
-	Sleep(1000);
+
+	Sleep(100);
 
 	FormateData(Point3i(40000, 2000, 0), Speed(3300, 3300, 0), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	cout << flag << endl;
 
 	ifstream fin;
