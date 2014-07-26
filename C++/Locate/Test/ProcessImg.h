@@ -47,41 +47,47 @@ Point ProcessImg(Mat img)
 	//统计程序用时
 	//double time = 0;
 	//time = (double)getTickCount();
-
-	//声明IplImage指针
-
-	//Mat img = imread(picName,CV_LOAD_IMAGE_COLOR);
-	/*if (!img.data)
-	{
-		cout << "read image error!" << endl;
-		return ;
-	}*/
-	/*namedWindow("sourse",1);
-	imshow("sourse", img);*/
-	//Mat background = imread("background.jpg");
-
+	
 	Mat res;
 	res = img.clone();
 	//addWeighted( img, 1, background, -1, 0.0, img);
-	//imshow("res",img);
-	//waitKey();
 	Mat grayimg;
+	Mat binaryimg;
 	cvtColor(img, grayimg, CV_RGB2GRAY);
-
+	
 	GaussianBlur(grayimg, grayimg, Size(13, 13), 0.5, 0.5);
-
+	
+	imshow("gray", grayimg);
+	waitKey();
+	
 	medianBlur(grayimg, grayimg, 7);
-	//namedWindow("grayimg",1);
-	//imshow("grayimg", grayimg);
-	//waitKey();
+	//blur(grayimg, grayimg, Size(5, 5));
+	//equalizeHist(grayimg, grayimg);
+	//medianBlur(grayimg, grayimg, 7);
+	cv::threshold(grayimg,grayimg,50,70,THRESH_OTSU);
+	imshow("bw", grayimg);
 
-	Mat binaryimg; //= grayimg < 100;
+	vector<vector<Point>> contous;
+	findContours(grayimg, contous, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+	for (int i = 0; i < contous.size(); i++)
+	{
+		if (contourArea(contous[i]) > 1000)
+			drawContours(res, contous, i, Scalar(0, 255, 0), -1);
+	}
+	imshow("res", res);
+	waitKey();
+	Canny(grayimg, binaryimg, 15, 30);
+	
+	imshow("Canny", binaryimg);
+	waitKey();
+	//= grayimg < 100;
 	//localOTSU(grayimg,Size(60,60));
-	//cv::threshold(grayimg,binaryimg,50,70,THRESH_OTSU);
+	
 	//cv::adaptiveThreshold(grayimg,binaryimg,255,cv::THRESH_BINARY_INV,cv::ADAPTIVE_THRESH_GAUSSIAN_C,31,30);
-	binaryimg = (grayimg>25);
-	//imshow("bw",binaryimg);
-	//waitKey();
+	//binaryimg = (grayimg<30);
+	//medianBlur(binaryimg, binaryimg, 5);
+	imshow("bw",binaryimg);
+	waitKey();
 	/*vector<vector<Point>> contous;
 	findContours(binaryimg,contous,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
 	//contous.
@@ -90,71 +96,90 @@ Point ProcessImg(Mat img)
 	Vector<Point> bound;
 	for (int i=0; i < contous.size(); i++)
 	{
-	//通过轮廓边缘像素数做第一步过滤（还差像素区域平均值过滤）
-	if (contourArea(contous[i]) < 18000 && contourArea(contous[i]) > 100)
-	{
-	//cout << "contou area:" << cv::contourArea(*iter)<<endl;
-	//tarcontous.push_back(*iter);
-	drawContours(binaryimg,contous,i,Scalar(255,255,255),-1);
-	bound = getBound(contous[i]);
-	//框定扫描范围
-	line(res, bound[0], Point(bound[1].x, bound[0].y), Scalar(255,0,0),1);
-	line(res, bound[0], Point(bound[0].x, bound[1].y), Scalar(255,0,0),1);
-	line(res, Point(bound[0].x, bound[1].y), bound[1], Scalar(255,0,0),1);
-	line(res, Point(bound[1].x, bound[0].y), bound[1], Scalar(255,0,0),1);
-	//imshow("bound",res);
-	//waitKey();
-	cout << contourArea(contous[i]) << endl;
-	}
-	else
-	drawContours(binaryimg,contous,i,Scalar(0,0,0),-1);
-	i++;
+		//通过轮廓边缘像素数做第一步过滤（还差像素区域平均值过滤）
+		if (contourArea(contous[i]) > 100)
+		{
+			//cout << "contou area:" << cv::contourArea(*iter)<<endl;
+			//tarcontous.push_back(*iter);
+			drawContours(res,contous,i,Scalar(0,255,0),-1);
+			bound = getBound(contous[i]);
+			//框定扫描范围
+			line(res, bound[0], Point(bound[1].x, bound[0].y), Scalar(0,0,255),1);
+			line(res, bound[0], Point(bound[0].x, bound[1].y), Scalar(0,0,255),1);
+			line(res, Point(bound[0].x, bound[1].y), bound[1], Scalar(0,0,255),1);
+			line(res, Point(bound[1].x, bound[0].y), bound[1], Scalar(0,0,255),1);
+			//imshow("bound",res);
+			//waitKey();
+			cout << contourArea(contous[i]) << endl;
+		}
+		else
+			drawContours(res,contous,i,Scalar(255,255,255),-1);
+
+		i++;
 	}*/
 	//medianBlur(binaryimg,binaryimg,3);
 	
-	//Canny(binaryimg,binaryimg,10,80);
-	vector<Vec2f> lines;
-	HoughLines(binaryimg, lines, 1, CV_PI / 180, 150, 0, 0);
+	
+	vector<Vec4i> lines;
+	HoughLinesP(binaryimg, lines, 1, CV_PI / 180, 150, 100, 1000);
 	//vector<Vec4i> lines;
 	//HoughLinesP(binaryimg, lines, 1, CV_PI / 180, 50, 50, 10);
 	//RankLines(lines);
-	sort(lines.begin(), lines.end(), CompareSlop);
-	
+	//sort(lines.begin(), lines.end(), CompareSlop);
+	//sort(lines.begin(), lines.end(), [](Vec2f const& a, Vec2f const& b){ return a[1] > b[1]; });
+
 	//imshow("Res", res);
 	//waitKey();
+	vector<Point> linesP;
+	for (size_t i = 0; i < lines.size(); i++)
+	{
+		Vec4i tempLine = lines[i];
+		//line(res, Point(tempLine[0], tempLine[1]), Point(tempLine[2], tempLine[3]), Scalar(255, 255,0), 1);
+		linesP.push_back(Point(tempLine[0], tempLine[1]));
+		linesP.push_back(Point(tempLine[2], tempLine[3]));
 
+	}
+	Vector<Point> bound;
+	bound = getBound(linesP);
+	//框定扫描范围
+	line(res, bound[0], Point(bound[1].x, bound[0].y), Scalar(0, 0, 255), 1);
+	line(res, bound[0], Point(bound[0].x, bound[1].y), Scalar(0, 0, 255), 1);
+	line(res, Point(bound[0].x, bound[1].y), bound[1], Scalar(0, 0, 255), 1);
+	line(res, Point(bound[1].x, bound[0].y), bound[1], Scalar(0, 0, 255), 1);
+	imshow("lines", res);
+	waitKey();
 	Vec2f line1, line2;
 	for (int i = 0; i<2; i++)
 		line1[i] = line2[i] = 0.0;
 
-	for (int i = 0; i<lines.size() - 1; i++)
-	{
-		//Vec4i line1 = lines[i];
-		//line(res,Point(line1[0], line1[1]), Point(line1[2], line1[3]), Scalar(255, 255, 255), 1);
-		Vec2f tempLine1 = lines[i], tempLine2 = lines[i + 1];
-		
-		line1[0] += tempLine1[0];
-		line1[1] += tempLine1[1];
-		
-		//cout << (double)tempSlop1 << endl << (double)tempSlop2 << endl;
-		if (abs(tempLine1[1] - tempLine2[1]) < 0.3)
-		{
-			continue;
-		}
-		else
-		{
-			line1[0] /= (i + 1);
-			line1[1] /= (i + 1);
-			
-			for (int j = i + 1; j<lines.size(); j++)
-			{
-				tempLine2 = lines[j];
-				line2[0] += tempLine2[0] / (lines.size() - i - 1);
-				line2[1] += tempLine2[1] / (lines.size() - i - 1);
-			}
-			break;
-		}
-	}
+	//for (int i = 0; i<lines.size() - 1; i++)
+	//{
+	//	//Vec4i line1 = lines[i];
+	//	//line(res,Point(line1[0], line1[1]), Point(line1[2], line1[3]), Scalar(255, 255, 255), 1);
+	//	Vec2f tempLine1 = lines[i], tempLine2 = lines[i + 1];
+	//	
+	//	line1[0] += tempLine1[0];
+	//	line1[1] += tempLine1[1];
+	//	
+	//	//cout << (double)tempSlop1 << endl << (double)tempSlop2 << endl;
+	//	if (abs(tempLine1[1] - tempLine2[1]) < 0.3)
+	//	{
+	//		continue;
+	//	}
+	//	else
+	//	{
+	//		line1[0] /= (i + 1);
+	//		line1[1] /= (i + 1);
+	//		
+	//		for (int j = i + 1; j<lines.size(); j++)
+	//		{
+	//			tempLine2 = lines[j];
+	//			line2[0] += tempLine2[0] / (lines.size() - i - 1);
+	//			line2[1] += tempLine2[1] / (lines.size() - i - 1);
+	//		}
+	//		break;
+	//	}
+	//}
 
 	//line(res, Point(line1[0], line1[1]), Point(line1[2], line1[3]), Scalar(255, 255, 255), 2);
 	//line(res, Point(line2[0], line2[1]), Point(line2[2], line2[3]), Scalar(255, 255, 255), 2);

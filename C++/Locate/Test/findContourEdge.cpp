@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 #include <vector>
 #include <deque>
 #include <opencv2/core/core.hpp>
@@ -81,57 +81,43 @@ void StartWeld()
 
 void StartWeldTest()
 {
-	FormateData(Point3i(15000, 5000, 0), Speed(20000, 20000, 3000), g_buffer);
+	Mat img(100, 300, CV_8UC1, Scalar(255));
+	putText(img, "Start", Point(90, 60), 1, 3, Scalar(0));
+	//准备
+	FormateData(Point3i(30000, 28000, 0), Speed(60000, 60000, 6000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	Sleep(10000);
-	FormateData(Point3i(15000, 5000, 17500), Speed(3000, 3000, 30000), g_buffer);
+	Sleep(5000);
+	//下压
+	FormateData(Point3i(30000, 28000, 13500), Speed(3000, 3000, 30000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
- 	Sleep(1100);
-	FormateData(Point3i(15000, 5000, 16000), Speed(3000, 3000, 30000), g_buffer);
+	Sleep(800);
+	//抬起
+	FormateData(Point3i(100000, 28000, 11500), Speed(2500, 2500, 30000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	Sleep(1100);
-	FormateData(Point3i(150000, 2000, 61000), Speed(3300, 3300, 1000), g_buffer);
+	Sleep(200);
+	//压低
+	FormateData(Point3i(100000, 28000, 12000), Speed(2500, 2500, 30000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	//FormateData(g_vP[g_pointCount], Speed(2000,2000,1000), g_buffer);
-	//g_pointCount++;
-	VideoCapture cap(0); // open the default camera
-	cap.set(CV_CAP_PROP_FRAME_WIDTH,1024.0);
-	cap.set(CV_CAP_PROP_FRAME_HEIGHT,768.0);
-	Mat frame;
-	for (int i = 0; i < 610; i++)
-	{
-		cap >> frame; // get a new frame from camera
-		//frame = imread("E:\\���Ӷ�λ\\pictures\\20140527\\18_11_46.jpg");
-		//Rect rec(300, 100, 300, 650);
-		//int p = TestHoughLines(frame(rec));
-		//circle(frame, Point(p.x, p.y), 4, Scalar(255, 255, 255), 2);
-		imshow("video", frame);
-		waitKey(50);
-	}
-	//Sleep(40000);
-	FormateData(Point3i(150000, 2000, 0), Speed(3300, 3300, 20000), g_buffer);
+	Sleep(800);
+	//朝目标点移动
+	FormateData(Point3i(180000, 28000, 77000), Speed(2500, 2500, 950), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	
+	imshow("wait", img);
+	waitKey(30000);
+	//抬起
+	
+	FormateData(Point3i(160000, 2000, 0), Speed(3300, 3300, 20000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer)); ‍
 }
 
 int main()
 {
-	bool ini = InitCom(g_hCom, g_wrOverlapped);
+	
+	//bool ini = InitCom(g_hCom, g_wrOverlapped);
 	bool flag = true;
-	FormateData(Point3i(10, 10, 10), Speed(3300, 3300, 0), g_buffer);
-	flag = SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	cout << flag << endl;
-
-	FormateData(Point3i(20000, 0, 0), Speed(3300, 3300, 0), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	cout << flag << endl;
-
-	Sleep(100);
-
-	FormateData(Point3i(40000, 2000, 0), Speed(3300, 3300, 0), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	cout << flag << endl;
-
-	ifstream fin;
+	//StartWeldTest();
+	/*ifstream fin;
 	fin.open("C:\\Users\\James\\Desktop\\res2.txt");
 	for (size_t i = 0; i < 15; i++)
 	{
@@ -146,21 +132,26 @@ int main()
 		xSpeed = 3300;
 		zSpeed = 0;
 		g_vS.push_back(Speed(xSpeed, ySpeed, zSpeed));
+	}*/
+	VideoCapture cap(0); // open the default camera
+	cap.set(CV_CAP_PROP_FRAME_WIDTH,1024.0);
+	cap.set(CV_CAP_PROP_FRAME_HEIGHT,768.0);
+	Mat frame;
+	int count = 0;
+	for (;;){
+		cap >> frame; // get a new frame from camera
+		//frame = imread("E:\\焊接定位\\pictures\\20140723\\08_26_26.jpg");
+		//Rect rec(0, 320, 200, 400);
+		//int p = TestHoughLines(frame(rec));
+		Point center = ProcessImg(frame);
+		//circle(frame, Point(p.x, p.y), 4, Scalar(255, 255, 255), 2);
+		imshow("video", frame);
+		char c = waitKey(50);
+		if ('s' == c){ 
+			SaveImg(frame, count);
+			count++;
+		}
 	}
-	//VideoCapture cap(0); // open the default camera
-	//cap.set(CV_CAP_PROP_FRAME_WIDTH,1024.0);
-	//cap.set(CV_CAP_PROP_FRAME_HEIGHT,768.0);
-	//Mat frame;
-	//for (;;)
-	//{
-	//	cap >> frame; // get a new frame from camera
-	//	//frame = imread("E:\\���Ӷ�λ\\pictures\\20140527\\18_11_46.jpg");
-	//	Rect rec(300, 100, 300, 650);
-	//	//int p = TestHoughLines(frame(rec));
-	//	//circle(frame, Point(p.x, p.y), 4, Scalar(255, 255, 255), 2);
-	//	imshow("video", frame);
-	//	waitKey(50);
-	//}
 
 	//bool ini = InitCom(g_hCom, g_wrOverlapped);
 
@@ -276,7 +267,7 @@ int main()
 	//std::ios::sync_with_stdio(false);
 	//IplImage* pFrame = NULL;
 
-	//��ȡ����ͷ
+	//获取摄像头
 	//CvCapture* pCapture = cvCreateCameraCapture(-1);
 
 	
@@ -287,7 +278,7 @@ int main()
 		//pFrame=cvQueryFrame( pCapture );
 		//if(!pFrame)break;
 		//cvShowImage("video",pFrame);
-		//Mat frame = imread("E:\\���Ӷ�λ\\pictures\\20140609\\18_41_22.jpg");
+		//Mat frame = imread("E:\\焊接定位\\pictures\\20140609\\18_41_22.jpg");
 		//cap >> frame; // get a new frame from camera
 		//cvtColor(frame, frame, CV_BGR2GRAY);
 		//GaussianBlur(frame, frame, Size(7,7), 1.5, 1.5);
