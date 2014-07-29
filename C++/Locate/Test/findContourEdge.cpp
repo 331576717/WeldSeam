@@ -65,18 +65,50 @@ DWORD WINAPI ImgProcThread(LPVOID param)
 
 void StartWeld()
 {
-	FormateData(Point3i(8000, 4000, 0), Speed(3000, 3000, 3000), g_buffer);
+	//原点
+	Point3i originPoint(0,0,0);
+	//焊条起焊准备点
+	Point3i readyPoint(8000,4000,0);
+	//前往焊条起焊准备点的速度
+	Speed goReaPoiSpeed(3000,3000,3000);
+	FormateData(readyPoint, goReaPoiSpeed, g_buffer);
+	//FormateData(Point3i(8000, 4000, 0), Speed(3000, 3000, 3000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	Sleep(10000);
-	FormateData(Point3i(8000, 4000, 17000), Speed(3000, 3000, 40000), g_buffer);
+	Sleep(MoveTime(originPoint,readyPoint,goReaPoiSpeed));
+	//Sleep(10000);
+
+
+	//焊条下降点（点火点）
+	Point3i downPoint(8000, 4000, 17000);
+	//前往点火点速度
+	Speed goDownPoiSpeed(3000, 3000, 40000);
+	FormateData(downPoint, goDownPoiSpeed, g_buffer);
+	//FormateData(Point3i(8000, 4000, 17000), Speed(3000, 3000, 40000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	Sleep(1100);
-	FormateData(Point3i(8000, 4000, 15000), Speed(3000, 3000, 20000), g_buffer);
+	Sleep(MoveTime(readyPoint, downPoint,goDownPoiSpeed));
+	//Sleep(1100);
+
+
+	//焊条点火以后抬起点
+	Point3i upPoint(8000, 4000, 15000);
+	//点火后抬起速度
+	Speed goUpPoiSpeed(3000, 3000, 20000);
+	FormateData(upPoint, goUpPoiSpeed, g_buffer);
+	//FormateData(Point3i(8000, 4000, 15000), Speed(3000, 3000, 20000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	Sleep(1100);
-	FormateData(g_vP[g_pointCount], g_vS[g_pointCount], g_buffer);
-	g_pointCount++;
-	Sleep(2000);
+	Sleep(MoveTime(downPoint ,upPoint, goUpPoiSpeed));
+	//Sleep(1100);
+
+
+	////焊条抬起后压低点（起焊点）
+	//Point3i Point(8000, 4000, 15000);
+	////前往压低点速度
+	//Speed goUpPoiSpeed(3000, 3000, 20000);
+	//FormateData(upPoint, goUpPoiSpeed, g_buffer);
+	////FormateData(Point3i(8000, 4000, 15000), Speed(3000, 3000, 20000), g_buffer);
+	//SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	//Sleep(MoveTime(downPoint, upPoint, goUpPoiSpeed));
+	////Sleep(1100);
 }
 
 void StartWeldTest()
@@ -102,13 +134,12 @@ void StartWeldTest()
 	//朝目标点移动
 	FormateData(Point3i(180000, 28000, 77000), Speed(2500, 2500, 950), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	
+
+
 	imshow("wait", img);
 	waitKey(30000);
 	//抬起
-	
-	FormateData(Point3i(160000, 2000, 0), Speed(3300, 3300, 20000), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer)); ‍
+
 }
 
 int main()
@@ -134,7 +165,7 @@ int main()
 		g_vS.push_back(Speed(xSpeed, ySpeed, zSpeed));
 	}*/
 	VideoCapture cap(0); // open the default camera
-	cap.set(CV_CAP_PROP_FRAME_WIDTH,1024.0);
+	cap.set(CV_CAP_PROP_FRAME_WIDT````H,1024.0);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT,768.0);
 	Mat frame;
 	int count = 0;
@@ -143,7 +174,7 @@ int main()
 		//frame = imread("E:\\焊接定位\\pictures\\20140723\\08_26_26.jpg");
 		//Rect rec(0, 320, 200, 400);
 		//int p = TestHoughLines(frame(rec));
-		Point center = ProcessImg(frame);
+		//Point center = ProcessImg(frame);
 		//circle(frame, Point(p.x, p.y), 4, Scalar(255, 255, 255), 2);
 		imshow("video", frame);
 		char c = waitKey(50);

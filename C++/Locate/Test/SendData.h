@@ -20,6 +20,7 @@ struct Speed
 bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped);
 bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int bufferSize);
 void FormateData(Point3i pt, Speed speed, char* buffer, int bufferSize);
+double MoveTime(Point3i start, Point3i end, Speed sp, double delay);
 
 bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 {
@@ -164,3 +165,14 @@ void FormateData(Point3i pt, Speed speed, char* buffer, int bufferSize = 0)
 
 }
 
+double MoveTime(Point3i start, Point3i end, Speed sp, double delay = 0)
+{
+	double xTime = abs(start.x - end.x) / sp.xSpeed + delay;
+	double yTime = abs(start.y - end.y) / sp.ySpeed + delay;
+	double zTime = abs(start.z - end.z) / sp.zSpeed + delay;
+
+	if (xTime > yTime)
+		return xTime > zTime ? xTime : zTime;
+	else
+		return yTime > zTime ? yTime : zTime;
+}
