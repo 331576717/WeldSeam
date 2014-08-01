@@ -116,7 +116,7 @@ void StartWeldTest()
 	Mat img(100, 300, CV_8UC1, Scalar(255));
 	putText(img, "Start", Point(90, 60), 1, 3, Scalar(0));
 	//准备
-	FormateData(Point3i(30000, 28000, 0), Speed(60000, 60000, 6000), g_buffer);
+	FormateData(Point3i(10000, 10000, 10000), Speed(3000, 3000, 3000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(5000);
 	//下压
@@ -165,7 +165,7 @@ int main()
 		g_vS.push_back(Speed(xSpeed, ySpeed, zSpeed));
 	}*/
 	VideoCapture cap(0); // open the default camera
-	cap.set(CV_CAP_PROP_FRAME_WIDT````H,1024.0);
+	cap.set(CV_CAP_PROP_FRAME_WIDTH,1024.0);
 	cap.set(CV_CAP_PROP_FRAME_HEIGHT,768.0);
 	Mat frame;
 	int count = 0;
@@ -174,7 +174,7 @@ int main()
 		//frame = imread("E:\\焊接定位\\pictures\\20140723\\08_26_26.jpg");
 		//Rect rec(0, 320, 200, 400);
 		//int p = TestHoughLines(frame(rec));
-		//Point center = ProcessImg(frame);
+		Point center = ProcessImg(frame);
 		//circle(frame, Point(p.x, p.y), 4, Scalar(255, 255, 255), 2);
 		imshow("video", frame);
 		char c = waitKey(50);

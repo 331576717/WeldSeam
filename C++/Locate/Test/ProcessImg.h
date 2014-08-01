@@ -19,6 +19,43 @@ Vector<Point> getBound(Vector<Point> vP);
 void RankLines(vector<Vec4i>& lines);
 
 bool CompareSlop(Vec2f l1, Vec2f l2);
+
+
+bool GetCenterAndWidth(vector<Point>& vecPoints, Point& p, double& width);
+
+double GetTheta(Mat img);
+
+void RotateContour(vector<Point>& p, double theta);
+
+/*bool GetCenterAndWidth(vector<Point>& vecPoints, Point& p, double& width)
+{
+	double theta = GeTheta(vecPoints);
+
+	RotateContour(vecPoints, theta);
+
+	
+	vector<Point> center;
+	center.push_back(p);
+	RotateContour(center, 0-theta);
+	p = center[0];
+	return true;
+}*/
+
+double GetTheta(Mat img)
+{
+	vector<Vec2f> lines;
+	HoughLines(img, lines, 1, CV_PI / 360, 100);
+
+	for (size_t i = 0; i < lines.size(); i++)
+	{
+		float theta = lines[i][1];
+		
+	}
+	imshow("Lines", img);
+	waitKey();
+	return 0.0;
+}
+
 int SaveImg(Mat mat, int flag)
 {
 	//flag=1 不新建文件夹；flag=0新建文件夹
@@ -69,12 +106,22 @@ Point ProcessImg(Mat img)
 
 	vector<vector<Point>> contous;
 	findContours(grayimg, contous, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
-	for (int i = 0; i < contous.size(); i++)
-	{
-		if (contourArea(contous[i]) > 1000)
-			drawContours(res, contous, i, Scalar(0, 255, 0), -1);
+	for (int i = 0; i < contous.size(); i++){
+		if (contourArea(contous[i]) > 1000){
+			Mat houghImg(img.size().width, img.size().height, CV_8U, Scalar::all(0));
+			drawContours(houghImg, contous, i, 255, 1);
+			//imshow("houghImg", houghImg);
+			//waitKey();
+			double theta = GetTheta(houghImg);
+			Point center;
+			double width;
+			//double theta = GetTheta()
+			//bool findCenter = GetCenterAndWidth(contous[i], center, width);
+		}
+		else
+			drawContours(grayimg, contous, i, 0, -1);
 	}
-	imshow("res", res);
+	imshow("res", grayimg);
 	waitKey();
 	Canny(grayimg, binaryimg, 15, 30);
 	
@@ -370,7 +417,3 @@ bool CompareSlop(Vec2f l1, Vec2f l2)
 {
 	return l2[1] > l1[1];
 }
-
-
-
-
