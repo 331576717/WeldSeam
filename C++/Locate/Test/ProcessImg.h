@@ -4,7 +4,7 @@
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
-
+#include <algorithm>
 using namespace cv;
 using namespace std;
 
@@ -18,42 +18,130 @@ Vector<Point> getBound(Vector<Point> vP);
 
 void RankLines(vector<Vec4i>& lines);
 
-bool CompareSlop(Vec2f l1, Vec2f l2);
+bool CompareSlop(Vec2f &l1, Vec2f &l2);
 
+bool CompareTheta(Vec2f &l1, Vec2f &l2);
 
-bool GetCenterAndWidth(vector<Point>& vecPoints, Point& p, double& width);
+bool ComparePointX(Point &p1, Point &p2);
+
+bool GetCenterAndWidth(vector<Point>& vecPoints, double theta, Point& center, double& width);
 
 double GetTheta(Mat img);
 
 void RotateContour(vector<Point>& p, double theta);
 
-/*bool GetCenterAndWidth(vector<Point>& vecPoints, Point& p, double& width)
-{
-	double theta = GeTheta(vecPoints);
+void RotatePoint(Point &p, double theta);
 
+bool GetCenterAndWidth(vector<Point>& vecPoints, double theta, Point& center, double& width)
+{
 	RotateContour(vecPoints, theta);
 
+	sort(vecPoints.begin(), vecPoints.end(), ComparePointX);
 	
-	vector<Point> center;
-	center.push_back(p);
-	RotateContour(center, 0-theta);
-	p = center[0];
+	int nextStart = 0;
+	int currentStart = 0;
+	int windowSize = 100;
+	int pCount = 0;
+	int step = 20;
+	int maxCount = 0;
+	int maxStart = 0;
+	for (int i = 0; i < vecPoints.size(); i++){
+		if (abs(vecPoints[i].x - vecPoints[currentStart].x) < windowSize){
+			pCount++;
+			if (abs(vecPoints[i].x - vecPoints[currentStart].x - step) < 5){
+				nextStart = i;
+			}
+		}
+		else{
+			if (pCount > maxCount){
+				maxCount = pCount;
+				maxStart = currentStart;
+			}
+			pCount = 0;
+			i = nextStart;
+			currentStart = nextStart;
+		}
+	}
+
+	Point minYPoint(vecPoints[maxStart]), maxYPoint(vecPoints[maxStart]);
+
+	for (int i = 0; i < maxCount; i++)
+	{
+		if (vecPoints[maxStart + i].y < minYPoint.y)
+			minYPoint = vecPoints[maxStart + i];
+		else if (vecPoints[maxStart + i].y > maxYPoint.y)
+			maxYPoint = vecPoints[maxStart + i];
+	}
+
+	center.x = (minYPoint.x + maxYPoint.x) / 2 + 0.5;
+	center.y = (minYPoint.y + maxYPoint.y) / 2 + 0.5;
+
+	RotatePoint(center, 0-theta);
 	return true;
-}*/
+}
+
+void RotateContour(vector<Point>& vp, double theta)
+{
+	double cosTheta = cos(theta);
+	double sinTheta = sin(theta);
+	for (int i = 0; i < vp.size(); i++)
+	{
+		int tempX = vp[i].x;
+		int tempY = vp[i].y;
+		vp[i].y = tempX*sinTheta + tempY*cosTheta + 0.5;
+		vp[i].x = tempX*cosTheta - tempY*sinTheta + 0.5;
+	}
+}
+
+void RotatePoint(Point &p, double theta)
+{
+	double cosTheta = cos(theta);
+	double sinTheta = sin(theta);
+	int tempX = p.x;
+	int tempY = p.y;
+	p.x = tempX*cosTheta - tempY*sinTheta + 0.5;
+	p.y = tempX*sinTheta + tempY*cosTheta + 0.5;
+}
 
 double GetTheta(Mat img)
 {
 	vector<Vec2f> lines;
 	HoughLines(img, lines, 1, CV_PI / 360, 100);
+	sort(lines.begin(), lines.end(), CompareTheta);
 
-	for (size_t i = 0; i < lines.size(); i++)
+	float precision = 0.05;
+
+	float currentSum = lines[0][1];
+	int currentCount = 1;
+	float resSum = 0.0;
+	int resCount = 0;
+
+	for (size_t i = 1; i < lines.size(); i++)
 	{
-		float theta = lines[i][1];
-		
+		if (abs(lines[i][1] - lines[i - 1][1]) < precision)
+		{
+			currentSum += lines[i][1];
+			currentCount++;
+		}
+		else
+		{
+			if (currentCount > resCount)
+			{
+				resCount = currentCount;
+				resSum = currentSum;
+			}
+			currentSum = lines[i][1];
+			currentCount = 1;
+		}
 	}
-	imshow("Lines", img);
-	waitKey();
-	return 0.0;
+	if ( abs(resSum) < 0.001 )
+	{
+		resSum = currentSum;
+		resCount = currentCount;
+	}
+	//imshow("Lines", img);
+	//waitKey();
+	return resSum/resCount;
 }
 
 int SaveImg(Mat mat, int flag)
@@ -94,36 +182,54 @@ Point ProcessImg(Mat img)
 	
 	GaussianBlur(grayimg, grayimg, Size(13, 13), 0.5, 0.5);
 	
-	imshow("gray", grayimg);
-	waitKey();
+	//imshow("gray", grayimg);
+	//waitKey();
 	
 	medianBlur(grayimg, grayimg, 7);
 	//blur(grayimg, grayimg, Size(5, 5));
 	//equalizeHist(grayimg, grayimg);
 	//medianBlur(grayimg, grayimg, 7);
 	cv::threshold(grayimg,grayimg,50,70,THRESH_OTSU);
-	imshow("bw", grayimg);
-
+	//grayimg = grayimg > 240;
+	//imshow("bw", grayimg);
+	//waitKey();
 	vector<vector<Point>> contous;
+
+	vector<vector<Point>> resContous;
 	findContours(grayimg, contous, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
+	
 	for (int i = 0; i < contous.size(); i++){
 		if (contourArea(contous[i]) > 1000){
-			Mat houghImg(img.size().width, img.size().height, CV_8U, Scalar::all(0));
-			drawContours(houghImg, contous, i, 255, 1);
+			
+			resContous.push_back(contous[i]);
+			
 			//imshow("houghImg", houghImg);
 			//waitKey();
-			double theta = GetTheta(houghImg);
-			Point center;
-			double width;
-			//double theta = GetTheta()
-			//bool findCenter = GetCenterAndWidth(contous[i], center, width);
+			
+			//circle(res, Point(cvRound(center.x), cvRound(center.y)), 5, Scalar(255,0,0), 1);
+			//imshow("res", res);
+			//waitKey();
 		}
 		else
 			drawContours(grayimg, contous, i, 0, -1);
 	}
-	imshow("res", grayimg);
-	waitKey();
-	Canny(grayimg, binaryimg, 15, 30);
+
+	Point center;
+	double width;
+	Mat houghImg(img.size().width, img.size().height, CV_8U, Scalar::all(0));
+
+	vector<Point> contourPoints;
+	for (size_t i = 0; i < resContous.size(); i++)
+	{
+		drawContours(houghImg, resContous, i, 255, 1);
+		contourPoints.insert(contourPoints.end(), resContous[i].begin(), resContous[i].end());
+	}
+
+	double theta = GetTheta(houghImg);
+	
+	bool findCenter = GetCenterAndWidth(contourPoints, theta, center, width);
+	return center;
+	/*Canny(grayimg, binaryimg, 15, 30);
 	
 	imshow("Canny", binaryimg);
 	waitKey();
@@ -135,7 +241,7 @@ Point ProcessImg(Mat img)
 	//medianBlur(binaryimg, binaryimg, 5);
 	imshow("bw",binaryimg);
 	waitKey();
-	/*vector<vector<Point>> contous;
+	vector<vector<Point>> contous;
 	findContours(binaryimg,contous,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
 	//contous.
 	//测试总共检测到的轮廓数
@@ -163,7 +269,7 @@ Point ProcessImg(Mat img)
 			drawContours(res,contous,i,Scalar(255,255,255),-1);
 
 		i++;
-	}*/
+	}
 	//medianBlur(binaryimg,binaryimg,3);
 	
 	
@@ -251,7 +357,7 @@ Point ProcessImg(Mat img)
 	//waitKey();
 
 	//namedWindow("binary",1);
-	/*vector<Vec4i> lines;
+	vector<Vec4i> lines;
 	HoughLinesP(binaryimg,lines,1,CV_PI/36,50,50,10);
 	//求得Hough变换获得的直线的均值
 	cout << lines.size();
@@ -319,7 +425,7 @@ Point ProcessImg(Mat img)
 	Point pt2(cvRound(x0 - 1000*(-b)),
 	cvRound(y0 - 1000*(a)));
 	line( res, pt1, pt2, Scalar(0,0,255), 1, 8 );
-	}*/
+	}
 
 	//将轮廓画出   
 
@@ -332,16 +438,17 @@ Point ProcessImg(Mat img)
 	//drawContours(binaryimg,tarcontous,0,Scalar(targraycolor1),);
 	//drawContours(binaryimg,tarcontous,1,Scalar(targraycolor2),CV_FILLED);
 
-	/*namedWindow("result",1);
-	imshow("result",binaryimg);*/
+	namedWindow("result",1);
+	imshow("result",binaryimg);
 
 	//time = 1000*((double)getTickCount() - time)/getTickFrequency();
 	//cout <<"用时："<< time <<endl;
 	//cout << "总共用时：" <<　time <<endl;
 
-	//namedWindow("final",1);
+	//namedWindow("final",1);*/
+	
 
-
+return center;
 	
 }
 
@@ -413,7 +520,17 @@ void RankLines(vector<Vec4i>& lines)
 	}
 }
 
-bool CompareSlop(Vec2f l1, Vec2f l2)
+bool CompareSlop(Vec2f &l1, Vec2f &l2)
 {
 	return l2[1] > l1[1];
+}
+
+bool CompareTheta(Vec2f &l1, Vec2f &l2)
+{
+	return l1[1] > l2[1];
+}
+
+bool ComparePointX(Point &p1, Point &p2)
+{
+	return p1.x < p2.x;
 }
