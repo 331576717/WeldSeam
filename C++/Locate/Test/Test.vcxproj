@@ -70,11 +70,13 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>F:\opencv\build\include;F:\opencv\build\include\opencv;F:\opencv\build\include\opencv2;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\opencv\build\x64\vc12\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>E:\opencv\build\include\opencv2;E:\opencv\build\include\opencv;E:\opencv\build\include;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\opencv\build\x64\vc12\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>F:\opencv\build\include\opencv2;F:\opencv\build\include\opencv;F:\opencv\build\include;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\opencv\build\x64\vc12\lib;$(LibraryPath)</LibraryPath>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -82,8 +84,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>E:\opencv\build\include;E:\opencv\build\include\opencv2;E:\opencv\build\include\opencv;$(IncludePath)</IncludePath>
-    <LibraryPath>E:\opencv\build\x64\vc10\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>F:\opencv\build\include;E:\opencv\build\include\opencv2;E:\opencv\build\include\opencv;$(IncludePath)</IncludePath>
+    <LibraryPath>F:\opencv\build\x64\vc10\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

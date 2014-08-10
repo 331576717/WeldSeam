@@ -164,30 +164,41 @@ int main()
 		g_vS.push_back(Speed(xSpeed, ySpeed, zSpeed));
 	}*/
 	VideoCapture cap(0); // open the default camera
-	cap.set(CV_CAP_PROP_FRAME_WIDTH,1024.0);
-	cap.set(CV_CAP_PROP_FRAME_HEIGHT,768.0);
-	Mat frame(768,1024,CV_32FC3, Scalar::all(255.0));
+	//CvCapture *cap = cvCreateCameraCapture(0);
+	if ( !cap.isOpened() )
+	{
+		std::cout << "Camera is not opened!" << endl;
+		return 1;
+	}
+	//cap.set(CV_CAP_PROP_FRAME_WIDTH,1024.0);
+	//cap.set(CV_CAP_PROP_FRAME_HEIGHT,768.0);
+	Mat frame (768, 1024, CV_32FC3, Scalar::all(255.0));
 	//frame = frame.dot(0.1);
 	//imshow("frame", frame);
 	//waitKey();
 	vector<Mat> frames;
 	int count = 0;
 	for (;;){
-		cap >> frame; // get a new frame from camera
-		frames.push_back(frame);
-		if (15 == frames.size())
+		bool readSucceed = cap.read(frame); // get a new frame from camera
+		if (readSucceed){
+			frames.push_back(frame);
+		}
+		else{
+			std::cout << "Camera read failed !" << endl;
+			continue;
+		}
+
+		int frameNumber = 15;
+		if (frameNumber == frames.size())
 		{
-			Mat resFrame = frames[0];
-			for (int i = 1; i < frames.size(); i++)
+			Mat resFrame = frames[0]/frameNumber;
+			for (int i = 1; i < frameNumber; i++)
 			{
-				resFrame = (resFrame + frames[i]/frames.size());
+				resFrame = (resFrame + frames[i]/frameNumber);
 			}
-			//resFrame = resFrame/frames.size();
-		//frame = imread("E:\\焊接定位\\pictures\\20140723\\08_26_26.jpg");
-		//Rect rec(0, 320, 200, 400);
-		//int p = TestHoughLines(frame(rec));
 			//imshow("resFrame", resFrame);
 			//waitKey();
+
 			Point center = ProcessImg(resFrame);
 			
 			circle(frame, Point(cvRound(center.x), cvRound(center.y)), 5, Scalar(0, 0, 255), 3);
