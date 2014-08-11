@@ -142,9 +142,27 @@ void StartWeldTest()
 
 }
 
+void WeldTest()
+{
+	FormateData(Point3i(1, 1000, 2000), Speed(90000, 20000, 0), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(3000);
+	for (int i = 0; i < 15; i++)
+	{
+		FormateData(Point3i(10000, 0, 0), Speed(25000, 0, 0), g_buffer);
+		SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+		Sleep(1000);
+	}
+
+}
+
 int main()
 {
-	//bool ini = InitCom(g_hCom, g_wrOverlapped);
+
+	bool ini = InitCom(g_hCom, g_wrOverlapped);
+	FormateData(Point3i(0, 1000, 2000), Speed(40000, 20000, 0), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	//WeldTest();
 	bool flag = true;
 	//StartWeldTest();
 	/*ifstream fin;
@@ -178,7 +196,7 @@ int main()
 	//waitKey();
 	vector<Mat> frames;
 	int count = 0;
-	for (;;){
+	for (int i = 0; i < 90; i++){
 		bool readSucceed = cap.read(frame); // get a new frame from camera
 		if (readSucceed){
 			frames.push_back(frame);
@@ -200,9 +218,14 @@ int main()
 			//waitKey();
 
 			Point center = ProcessImg(resFrame);
-			
-			circle(frame, Point(cvRound(center.x), cvRound(center.y)), 5, Scalar(0, 0, 255), 3);
-			imshow("video", frame);
+			long long distanceX = 1.0 * center.x / 268 * 1000 / 0.3;
+			long long distanceY = 1.0 * center.y / 268 * 1000 / 0.3;
+
+			FormateData(Point3i(distanceX, distanceY, 0), Speed(25000, 0, 0), g_buffer);
+			SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+			Sleep(1000);
+			//circle(frame, Point(cvRound(center.x), cvRound(center.y)), 5, Scalar(0, 0, 255), 3);
+			//imshow("video", frame);
 			char c = waitKey(50);
 			if ('s' == c){
 				SaveImg(frame, count);

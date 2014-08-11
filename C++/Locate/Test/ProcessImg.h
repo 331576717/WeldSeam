@@ -186,8 +186,8 @@ Point ProcessImg(Mat img)
 	//大津法阈值分割
 	cv::threshold(grayimg,grayimg,50,70,THRESH_OTSU);
 	//grayimg = grayimg > 240;
-	imshow("bw", grayimg);
-	waitKey();
+	//imshow("bw", grayimg);
+	//waitKey();
 
 	//轮廓识别
 	vector<vector<Point>> contours;
