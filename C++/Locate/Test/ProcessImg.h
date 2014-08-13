@@ -9,8 +9,7 @@ using namespace cv;
 using namespace std;
 
 int SaveImg(Mat mat, int flag);
-
-Point ProcessImg(Mat img);
+bool ProcessImg(Mat& img, Point& center, double& theta, double& width, double& length);
 
 Mat localOTSU(Mat img, Size block);
 
@@ -18,26 +17,44 @@ Vector<Point> getBound(Vector<Point> vP);
 
 void RankLines(vector<Vec4i>& lines);
 
-bool CompareSlop(Vec2f &l1, Vec2f &l2);
+bool CompareSlop(const Vec2f &l1, const Vec2f &l2);
 
-bool CompareTheta(Vec2f &l1, Vec2f &l2);
+bool CompareTheta(const Vec2f &l1, const Vec2f &l2);
 
-bool ComparePointX(Point &p1, Point &p2);
+bool ComparePointX(const Point &p1, const Point &p2);
 
-bool GetCenterAndWidth(vector<Point>& vecPoints, double theta, Point& center, double& width);
+bool GetCenterAndWidthAndLength(vector<Point>& vecPoints, const double contourTheta, Point& contourCenter, double& contourWidth, double& contourLength);
 
 double GetTheta(Mat img);
 
-void RotateContour(vector<Point>& p, double theta);
+void RotateContour(vector<Point>& p, const double theta);
 
 void RotatePoint(Point &p, double theta);
 
-bool GetCenterAndWidth(vector<Point>& vecPoints, double theta, Point& center, double& width)
+bool GetCenterAndWidthAndLength(vector<Point>& vecPoints, const double theta, Point& center, double& width, double& length )
 {
-	RotateContour(vecPoints, theta);
-
-	sort(vecPoints.begin(), vecPoints.end(), ComparePointX);
+	/*sort(vecPoints.begin(), vecPoints.end(), ComparePointX);
+	cout << vecPoints[0].x << endl << vecPoints[vecPoints.size() - 1].x << endl;
+	cout << vecPoints[0].y << endl << vecPoints[vecPoints.size() - 1].y << endl;
+	cout << abs(vecPoints[0].x - vecPoints[vecPoints.size() - 1].x) << endl;*/
 	
+	RotateContour(vecPoints, 0-theta);
+
+	/*Mat houghImg(2048, 2048, CV_8U, Scalar::all(0));
+	cout << endl << houghImg.channels() << endl;
+	for (int i = 0; i < vecPoints.size(); i++)
+	{
+		Point p(vecPoints[i].x + 100, vecPoints[i].y+1200);
+		cout << p.x << " " << p.y << endl;
+		houghImg.at<uchar>(p) = 255;
+	}
+	imshow("rotateContour", houghImg);
+	waitKey();*/
+
+	//对符合条件的所有轮廓点按照X进行排序
+	sort(vecPoints.begin(), vecPoints.end(), ComparePointX);
+	length = abs(vecPoints[0].x - vecPoints[vecPoints.size() - 1].x);
+
 	int nextStart = 0;
 	int currentStart = 0;
 	int windowSize = 100;
@@ -63,38 +80,57 @@ bool GetCenterAndWidth(vector<Point>& vecPoints, double theta, Point& center, do
 		}
 	}
 
-	Point minYPoint(vecPoints[maxStart]), maxYPoint(vecPoints[maxStart]);
-
-	for (int i = 0; i < maxCount; i++)
+	/*for (int i = 0; i < maxCount; i++)
 	{
+		
 		if (vecPoints[maxStart + i].y < minYPoint.y)
 			minYPoint = vecPoints[maxStart + i];
 		else if (vecPoints[maxStart + i].y > maxYPoint.y)
 			maxYPoint = vecPoints[maxStart + i];
+	}*/
+
+	Point minYPoint(5000,5000), maxYPoint(0,0);
+
+	for (int i = 0; i < vecPoints.size(); i++)
+	{
+		if (abs(vecPoints[vecPoints.size()-1].x/2 + vecPoints[0].x/2 - vecPoints[i].x) < 2 )
+		{
+			if (vecPoints[i].y < minYPoint.y)
+			{
+				minYPoint = vecPoints[i];
+			}
+
+			if (vecPoints[i].y > maxYPoint.y)
+			{
+				maxYPoint = vecPoints[i];
+			}
+
+		}
 	}
 
 	center.x = (minYPoint.x + maxYPoint.x) / 2 + 0.5;
 	center.y = (minYPoint.y + maxYPoint.y) / 2 + 0.5;
 	width = maxYPoint.y - minYPoint.y;
 
-	RotatePoint(center, 0-theta);
+	RotatePoint(center, theta);
 	return true;
 }
 
-void RotateContour(vector<Point>& vp, double theta)
+void RotateContour(vector<Point>& vp, const double theta)
 {
+	//cout << cos(60.0/180.0*3.1415926);
 	double cosTheta = cos(theta);
 	double sinTheta = sin(theta);
 	for (int i = 0; i < vp.size(); i++)
 	{
 		int tempX = vp[i].x;
 		int tempY = vp[i].y;
-		vp[i].y = tempX*sinTheta + tempY*cosTheta + 0.5;
 		vp[i].x = tempX*cosTheta - tempY*sinTheta + 0.5;
+		vp[i].y = tempX*sinTheta + tempY*cosTheta + 0.5;
 	}
 }
 
-void RotatePoint(Point &p, double theta)
+void RotatePoint(Point &p, const double theta)
 {
 	double cosTheta = cos(theta);
 	double sinTheta = sin(theta);
@@ -143,7 +179,7 @@ double GetTheta(Mat img)
 	}
 	//imshow("Lines", img);
 	//waitKey();
-	return resSum/resCount;
+	return resSum/resCount - CV_PI/2;
 }
 
 int SaveImg(Mat mat, int flag)
@@ -168,7 +204,7 @@ int SaveImg(Mat mat, int flag)
 	return save;
 }
 
-Point ProcessImg(Mat img)
+bool ProcessImg(Mat& img, Point& contourCenter, double& contourTheta, double& contourWidth, double& contourLength)
 {
 	
 	Mat res;
@@ -185,7 +221,6 @@ Point ProcessImg(Mat img)
 	
 	//大津法阈值分割
 	cv::threshold(grayimg,grayimg,50,70,THRESH_OTSU);
-	//grayimg = grayimg > 240;
 	//imshow("bw", grayimg);
 	//waitKey();
 
@@ -197,7 +232,7 @@ Point ProcessImg(Mat img)
 	//找出符合条件的所有轮廓线
 	for (int i = 0; i < contours.size(); i++){
 		//设定轮廓面积的上限与下限
-		int maxArea = 60000;
+		int maxArea = 90000;
 		int minArea = 1000;
 		double tmpContourArea = contourArea(contours[i]);
 		double ratioOfPerimeterArea = 1.0 * contours[i].size() / tmpContourArea;
@@ -205,35 +240,35 @@ Point ProcessImg(Mat img)
 
 		if (tmpContourArea < maxArea && tmpContourArea > minArea 
 				&& ratioOfPerimeterArea > ratioOfPerimeterAreaThreshold){
-			
 			resContours.push_back(contours[i]);
-			
 		}
 	}
 
 	//无符合条件的轮廓则返回空点
 	if ( resContours.empty() )
 	{
-		return Point(-1, -1);
+		return false;
 	}
 
-	Point center;
-	double width;
-	Mat houghImg(img.size().width, img.size().height, CV_8U, Scalar::all(0));
+	
+	Mat houghImg(img.size(), CV_8U, Scalar::all(0));
 
 	vector<Point> contourPoints;
 	for (size_t i = 0; i < resContours.size(); i++)
 	{
 		//在空白图上绘制所有符合条件的轮廓，用于求总体的斜率
 		drawContours(houghImg, resContours, i, 255, 1);
+		
 		//合并符合条件的所有轮廓用于计算中心和宽度
 		contourPoints.insert(contourPoints.end(), resContours[i].begin(), resContours[i].end());
 	}
 
-	double theta = GetTheta(houghImg);
+	contourTheta = GetTheta(houghImg);
+	//imshow("houghImg", houghImg);
+	//waitKey();
 	
-	bool findCenter = GetCenterAndWidth(contourPoints, theta, center, width);
-	return center;
+	bool findCenter = GetCenterAndWidthAndLength(contourPoints, contourTheta, contourCenter, contourWidth, contourLength);
+	return true;
 	
 }
 
@@ -305,17 +340,17 @@ void RankLines(vector<Vec4i>& lines)
 	}
 }
 
-bool CompareSlop(Vec2f &l1, Vec2f &l2)
+bool CompareSlop(const Vec2f &l1, const Vec2f &l2)
 {
 	return l2[1] > l1[1];
 }
 
-bool CompareTheta(Vec2f &l1, Vec2f &l2)
+bool CompareTheta(const Vec2f &l1, const Vec2f &l2)
 {
 	return l1[1] > l2[1];
 }
 
-bool ComparePointX(Point &p1, Point &p2)
+bool ComparePointX(const Point &p1, const Point &p2)
 {
 	return p1.x < p2.x;
 }

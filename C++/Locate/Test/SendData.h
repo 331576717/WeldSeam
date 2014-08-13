@@ -9,6 +9,7 @@
 using namespace std;
 using namespace cv;
 
+enum ControlFlag{ABSOLUTE_POSITION = 1,RELATIVE_POSITION = 3};
 struct Speed
 { 
 	int xSpeed; int ySpeed; int zSpeed; 
@@ -19,7 +20,7 @@ struct Speed
 
 bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped);
 bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int bufferSize);
-void FormateData(Point3i pt, Speed speed, char* buffer, int bufferSize);
+void FormateData(Point3i pt, Speed speed, char* buffer, int flag);
 double MoveTime(Point3i start, Point3i end, Speed sp, double delay);
 
 bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
@@ -83,7 +84,7 @@ bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 		ResetEvent(wrOverlapped.hEvent);
 		wrOverlapped.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 	}
-	
+	return true;
 }
 bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int bufferSize)
 {
@@ -124,9 +125,9 @@ bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int buffer
 
 }
 	
-void FormateData(Point3i pt, Speed speed, char* buffer, int bufferSize = 0)
+void FormateData(Point3i pt, Speed speed, char* buffer, int flag = ControlFlag::ABSOLUTE_POSITION)
 {
-	buffer[0] = 0x07;
+	buffer[0] = flag & 255;
 	//X
 	buffer[1] = pt.x >> 24;
 	buffer[2] = (pt.x >> 16) & 255;

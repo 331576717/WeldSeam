@@ -160,29 +160,8 @@ int main()
 {
 
 	bool ini = InitCom(g_hCom, g_wrOverlapped);
-	FormateData(Point3i(0, 1000, 2000), Speed(40000, 20000, 0), g_buffer);
-	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	//WeldTest();
-	bool flag = true;
-	//StartWeldTest();
-	/*ifstream fin;
-	fin.open("C:\\Users\\James\\Desktop\\res2.txt");
-	for (size_t i = 0; i < 15; i++)
-	{
-		unsigned int x, y, z, xSpeed, ySpeed, zSpeed;
-		fin >> x >> y >> z;
-		x = (10000 + 10000*i) % XLOCATIONBOUND;
-		y = 2000;
-		z = 77000;
-		g_vP.push_back(Point3i(x, y, z));
-
-		fin >> xSpeed >> ySpeed >> zSpeed;
-		xSpeed = 3300;
-		zSpeed = 0;
-		g_vS.push_back(Speed(xSpeed, ySpeed, zSpeed));
-	}*/
+	
 	VideoCapture cap(0); // open the default camera
-	//CvCapture *cap = cvCreateCameraCapture(0);
 	if ( !cap.isOpened() )
 	{
 		std::cout << "Camera is not opened!" << endl;
@@ -191,12 +170,10 @@ int main()
 	//cap.set(CV_CAP_PROP_FRAME_WIDTH,1024.0);
 	//cap.set(CV_CAP_PROP_FRAME_HEIGHT,768.0);
 	Mat frame (768, 1024, CV_32FC3, Scalar::all(255.0));
-	//frame = frame.dot(0.1);
-	//imshow("frame", frame);
-	//waitKey();
+	
 	vector<Mat> frames;
 	int count = 0;
-	for (int i = 0; i < 90; i++){
+	for (;;){
 		bool readSucceed = cap.read(frame); // get a new frame from camera
 		if (readSucceed){
 			frames.push_back(frame);
@@ -206,7 +183,7 @@ int main()
 			continue;
 		}
 
-		int frameNumber = 15;
+		int frameNumber = 1;
 		if (frameNumber == frames.size())
 		{
 			Mat resFrame = frames[0]/frameNumber;
@@ -216,20 +193,33 @@ int main()
 			}
 			//imshow("resFrame", resFrame);
 			//waitKey();
+			Point contourCenter(0, 0);
+			double contourWidth = 0.0;
+			double contourLength = 0.0;
+			double contourTheta = 0.0;
+			bool proImg = ProcessImg(resFrame,contourCenter,contourTheta, contourWidth,contourLength);
+			long long distanceX = 1.0 * contourCenter.x / 280 * 1000 / 0.3;
+			long long distanceY = 1.0 * contourCenter.y / 280 * 1000 / 0.3;
+			circle(resFrame, Point(cvRound(contourCenter.x), cvRound(contourCenter.y)), contourWidth/2, Scalar(0, 0, 255), 3);
+			imshow("video", resFrame);
+			//waitKey();
 
-			Point center = ProcessImg(resFrame);
-			long long distanceX = 1.0 * center.x / 268 * 1000 / 0.3;
-			long long distanceY = 1.0 * center.y / 268 * 1000 / 0.3;
-
-			FormateData(Point3i(distanceX, distanceY, 0), Speed(25000, 0, 0), g_buffer);
+			int step = 5000;
+			distanceX = step * cos(contourTheta);
+			distanceY = step * sin(contourTheta);
+			FormateData(Point3i(distanceX, distanceY, 0), Speed(5000, 5000, 0), g_buffer, ControlFlag::RELATIVE_POSITION);
 			SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-			Sleep(1000);
-			//circle(frame, Point(cvRound(center.x), cvRound(center.y)), 5, Scalar(0, 0, 255), 3);
-			//imshow("video", frame);
-			char c = waitKey(50);
+			//Sleep(1000);
+			
+			char c = waitKey(1000);
 			if ('s' == c){
-				SaveImg(frame, count);
+				SaveImg(resFrame, count);
 				count++;
+			}
+			if ('a' == c){
+				FormateData(Point3i(0, 0, 0), Speed(4000, 0, 0), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+				SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+				break;
 			}
 		frames.clear();
 		}
