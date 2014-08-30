@@ -32,5 +32,8 @@
     <ClCompile Include="findContourEdge.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="MoveMachineArm.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
