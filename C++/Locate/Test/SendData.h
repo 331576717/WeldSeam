@@ -12,13 +12,13 @@
 using namespace std;
 using namespace cv;
 
-enum ControlFlag{ABSOLUTE_POSITION = 1,RELATIVE_POSITION = 3};
+enum ControlFlag{ ABSOLUTE_POSITION = 1, RELATIVE_POSITION = 3 };
 
 struct Speed
-{ 
-	int xSpeed; int ySpeed; int zSpeed; 
+{
+	int xSpeed; int ySpeed; int zSpeed;
 
-	Speed(int x, int y, int z) : xSpeed(x), ySpeed(y), zSpeed(z){} 
+	Speed(int x, int y, int z) : xSpeed(x), ySpeed(y), zSpeed(z){}
 
 };
 
@@ -92,7 +92,7 @@ bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 }
 bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int bufferSize)
 {
-	
+
 	//第七步，发送数据
 	//y = 80000(16# 00 01 38 80),VB2004~VB2007,VD2004;
 	// send data 30000/80000
@@ -103,7 +103,7 @@ bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int buffer
 	buffer[2] = 0x00;
 	buffer[3] = 0x64;*/
 	//cout << "subFunc:" << buffer[0] << endl;
-	
+
 	DWORD dwerrorflag;
 	COMSTAT comstat;
 	DWORD writenumber = bufferSize;
@@ -128,7 +128,7 @@ bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int buffer
 	buffer[15] = 0x30;*/
 
 }
-	
+
 void FormateData(Point3i pt, Speed speed, char* buffer, int flag = ControlFlag::ABSOLUTE_POSITION)
 {
 	buffer[0] = flag & 255;

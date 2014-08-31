@@ -157,13 +157,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="MachineArmControl.h" />
     <ClInclude Include="ProcessImg.h" />
     <ClInclude Include="SendData.h" />
     <ClInclude Include="TestDemo.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="MoveMachineArm.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
