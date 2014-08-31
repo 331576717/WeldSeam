@@ -28,6 +28,10 @@ OVERLAPPED g_wrOverlapped;
 
 CONST int XLOCATIONBOUND = 160001;
 CONST int ZLOCATIONBOUND = 57000;
+
+CONST double XOFFSET = -126.85;
+CONST double YOFFSET = 8.59;
+
 vector<Point3i> g_vP;
 vector<Speed> g_vS;
 int g_pointCount = 0;
@@ -113,33 +117,34 @@ void StartWeld()
 
 void StartWeldTest()
 {
-	Mat img(100, 300, CV_8UC1, Scalar(255));
-	putText(img, "Start", Point(90, 60), 1, 3, Scalar(0));
+	//Mat img(100, 300, CV_8UC1, Scalar(255));
+	//putText(img, "Start", Point(90, 60), 1, 3, Scalar(0));
+
 	//准备
-	FormateData(Point3i(10000, 10000, 10000), Speed(3000, 3000, 3000), g_buffer);
+	FormateData(Point3i(106* 1000 / 3, 52 * 1000 / 3, 10 * 1000 / 3), Speed(30000, 30000, 3000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	Sleep(5000);
+	Sleep(2000);
 	//下压
-	FormateData(Point3i(30000, 28000, 13500), Speed(3000, 3000, 30000), g_buffer);
+	FormateData(Point3i(106 * 1000 / 3, 52 * 1000 / 3, 40 * 1000 / 3), Speed(3000, 3000, 80000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	Sleep(800);
+	Sleep(100);
+	
 	//抬起
-	FormateData(Point3i(100000, 28000, 11500), Speed(2500, 2500, 30000), g_buffer);
+	FormateData(Point3i(106 * 1000 / 3, 52 * 1000 / 3,  31* 1000 / 3), Speed(2500, 2500, 20000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-	Sleep(200);
+	Sleep(600);
 	//压低
-	FormateData(Point3i(100000, 28000, 12000), Speed(2500, 2500, 30000), g_buffer);
+	FormateData(Point3i(106 * 1000 / 3, 52 * 1000 / 3, 37 * 1000 / 3), Speed(2500, 2500, 30000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(800);
 	//朝目标点移动
-	FormateData(Point3i(180000, 28000, 77000), Speed(2500, 2500, 950), g_buffer);
+	FormateData(Point3i(600 * 1000 / 3, 52 * 1000 / 3, 320 * 1000 / 3), Speed(1850, 0, 950), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-
-
-	imshow("wait", img);
-	waitKey(30000);
+	
 	//抬起
-
+	FormateData(Point3i(600 * 1000 / 3, 52 * 1000 / 3, 0), Speed(1800, 0, 20000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+ 	Sleep(10000);
 }
 
 void WeldTest()
@@ -156,11 +161,42 @@ void WeldTest()
 
 }
 
+double ComputeDistance()
+{
+	int x1, y1, x2, y2;
+	cin >> x1 >> y1 >> x2 >> y2;
+	return sqrt(1.0*(x1 - x2)*(x1 - x2) + 1.0*(y1 - y2)*(y1 - y2));
+
+}
+double ConvertPixelToMillimeter(int pixel)
+{
+	const double pixel2millimeter = 39.01;
+	
+	double millimeter = pixel / pixel2millimeter;
+	
+	return millimeter;
+}
 int main()
 {
-
 	bool ini = InitCom(g_hCom, g_wrOverlapped);
+
+	//StartWeldTest();
+	/*for (;;)
+	{
+		double res = ComputeDistance();
+		cout << res << endl;
+	}*/
 	
+	
+	/*FormateData(Point3i(0, 20000, 0), Speed(3000, 0, 0), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(1000);
+	for (int i = 0; i < 20; i++)
+	{
+		FormateData(Point3i(4000 * i, 20000, 0), Speed(4000, 0, 0), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+		SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+		Sleep(1000);
+	}*/
 	VideoCapture cap(0); // open the default camera
 	if ( !cap.isOpened() )
 	{
@@ -198,20 +234,31 @@ int main()
 			double contourLength = 0.0;
 			double contourTheta = 0.0;
 			bool proImg = ProcessImg(resFrame,contourCenter,contourTheta, contourWidth,contourLength);
-			long long distanceX = 1.0 * contourCenter.x / 280 * 1000 / 0.3;
-			long long distanceY = 1.0 * contourCenter.y / 280 * 1000 / 0.3;
+
+			Point distancePoint(contourCenter.x, contourCenter.y);
+			RotatePoint(distancePoint, 1.0 / 180 * CV_PI);
+			long long distanceX = (ConvertPixelToMillimeter(contourCenter.x) - XOFFSET) * 1000 / 3;
+			long long distanceY = (ConvertPixelToMillimeter(contourCenter.y) - YOFFSET) * 1000 / 3;
+			
 			circle(resFrame, Point(cvRound(contourCenter.x), cvRound(contourCenter.y)), contourWidth/2, Scalar(0, 0, 255), 3);
 			imshow("video", resFrame);
 			//waitKey();
 
-			int step = 5000;
+		/*	int step = 5000;
 			distanceX = step * cos(contourTheta);
-			distanceY = step * sin(contourTheta);
-			FormateData(Point3i(distanceX, distanceY, 0), Speed(5000, 5000, 0), g_buffer, ControlFlag::RELATIVE_POSITION);
-			SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
-			//Sleep(1000);
-			
+			distanceY = step * sin(contourTheta);*/
 			char c = waitKey(1000);
+			
+			
+			int ySp = 200;
+			int xSp = 2000;
+			FormateData(Point3i(distanceX, distanceY, 0), Speed(xSp, ySp, 0), g_buffer, ControlFlag::RELATIVE_POSITION);
+			SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+			
+
+			//Sleep(1000);
+
+			
 			if ('s' == c){
 				SaveImg(resFrame, count);
 				count++;
