@@ -235,7 +235,7 @@ bool ProcessImg(Mat& img, Point& contourCenter, double& contourTheta, double& co
 	//找出符合条件的所有轮廓线
 	for (int i = 0; i < contours.size(); i++){
 		//设定轮廓面积的上限与下限
-		int maxArea = 120000;
+		int maxArea = 90000;
 		int minArea = 1000;
 		double tmpContourArea = contourArea(contours[i]);
 		double ratioOfPerimeterArea = 1.0 * contours[i].size() / tmpContourArea;
