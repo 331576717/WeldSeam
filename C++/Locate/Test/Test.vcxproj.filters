@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BFS.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="ProcessImg.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -30,6 +27,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="findContourEdge.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="MoveMachineArm.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

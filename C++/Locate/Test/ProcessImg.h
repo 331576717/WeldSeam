@@ -1,3 +1,6 @@
+#ifndef _PROCESS_IMG
+#define _PROCESS_IMG
+
 #include<vector>
 #include <deque>
 #include <opencv2/core/core.hpp>
@@ -354,3 +357,5 @@ bool ComparePointX(const Point &p1, const Point &p2)
 {
 	return p1.x < p2.x;
 }
+
+#endif
