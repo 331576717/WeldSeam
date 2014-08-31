@@ -3,41 +3,21 @@
 ////////*****************date:2014-07-24*******************************
 #ifndef _MOVE_MACHINE_ARM
 #define _MOVE_MACHINE_ARM
-
 #include <iostream>
 #include <cassert>
 #include <opencv2\highgui\highgui.hpp>
 #include <opencv2\core\core.hpp>
-#include "SendData.h"
+#include <vector>
 
+using namespace std;
 
-void RotatePoint(cv::Point3i &p,const double theta);
-//
+inline void RotateCenter(cv::Point3i &p,const double theta);
+
 //接受焊缝坐标信息，生成机械臂移动轨迹坐标
-int MoveMachineArm(cv::Point point,double weld_line_width,double weld_direction,double offset_direction);
-//point:焊缝中心坐标
-//weld_line_width:焊缝宽度
-//weld_direction：焊缝方向
-//offset_direction:模拟声称点便宜方向
+vector<cv::Point3i> MoveMachineArm(cv::Point3i point, const double theta, const double weld_line_width);
 
-extern char g_buffer[32];
 
-//for test use
-//int main()
-//{
-//	//测试数据
-//	cv::Point3d p1;
-//	double weld_line_width = 0.1;
-//	double weld_direction  = 0.1;//以
-//	double offset_direction = 0.1;
-//
-//	//
-//	MoveMachineArm(p1,weld_line_width,weld_direction,offset_direction);
-//
-//	return 0;
-//}
-
-void RotatePoint(cv::Point3i &p, const double theta)
+void RotateCenter(cv::Point3i &p, const double theta)
 {
 	double cosTheta = cos(theta);
 	double sinTheta = sin(theta);
@@ -47,12 +27,6 @@ void RotatePoint(cv::Point3i &p, const double theta)
 	p.y = tempX*sinTheta + tempY*cosTheta + 0.5;
 }
 
-/*
-*
-*
-*
-*/
-//int MoveMachineArm(cv::Point3d point,double weld_line_width,double weld_direction,double offset_direction)
 vector<cv::Point3i> MoveMachineArm(cv::Point3i point, const double theta, const double weld_line_width)
 {
 	//传入数据判断是否有问题
@@ -82,7 +56,7 @@ vector<cv::Point3i> MoveMachineArm(cv::Point3i point, const double theta, const 
 			cv::Point3i down_point;
 			//Speed zigzag_speed(8000, 4000, 17000);
 			//点旋转
-			RotatePoint(point, 0-theta);
+			RotateCenter(point, 0-theta);
 			//模拟出来的焊缝上面点
 			up_point.x = point.x - weld_line_width / 2;
 			up_point.y = point.y - weld_line_width / 2;
@@ -91,8 +65,8 @@ vector<cv::Point3i> MoveMachineArm(cv::Point3i point, const double theta, const 
 			down_point.x = point.x + weld_line_width / 2;
 			down_point.y = point.y + weld_line_width / 2;
 			
-			RotatePoint(up_point, theta);
-			RotatePoint(down_point, theta);
+			RotateCenter(up_point, theta);
+			RotateCenter(down_point, theta);
 			
 			weldtrack.push_back(up_point);
 			weldtrack.push_back(down_point);
@@ -106,5 +80,4 @@ vector<cv::Point3i> MoveMachineArm(cv::Point3i point, const double theta, const 
 
 	return weldtrack;
 }
-
 #endif

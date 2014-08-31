@@ -162,8 +162,8 @@
     <ClInclude Include="TestDemo.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="findContourEdge.cpp" />
-    <ClCompile Include="MoveMachineArm.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="MoveMachineArm.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

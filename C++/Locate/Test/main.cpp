@@ -1,196 +1,319 @@
-#include<opencv2\core\core.hpp>
-#include<opencv2\highgui\highgui.hpp>
-#include<opencv2\imgproc\imgproc.hpp>
 #include <iostream>
-#include <string>
 #include <vector>
-#include <sstream>
-#include "BFS.h"
-using namespace std;
+#include <deque>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <direct.h>
+#include <time.h>
+#include <io.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <algorithm>
+#include <Windows.h>
+#include <fstream>
+
+#include "ProcessImg.h"
+#include "SendData.h"
+#include "TestDemo.h"
+#include "MoveMachineArm.h"
+
 using namespace cv;
- Mat& processImage(Mat& mat);
- 
-int main()
+using namespace std;
+
+char g_buffer[32];
+HANDLE g_hTimingSemaphore;
+HANDLE g_hProcSemaphore;
+HANDLE g_hCom;
+OVERLAPPED g_wrOverlapped;
+
+CONST int XLOCATIONBOUND = 160001;
+CONST int ZLOCATIONBOUND = 57000;
+CONST double XOFFSET = -126.85;
+CONST double YOFFSET = 8.59;
+
+vector<Point3i> g_vP;
+vector<Speed> g_vS;
+int g_pointCount = 0;
+
+DWORD WINAPI TimingThread(LPVOID param)
 {
-	//����IplImageָ��
-  IplImage* pFrame = NULL;
+	while (true)
+	{
+		WaitForSingleObject(g_hTimingSemaphore, INFINITE);
+		SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+		cout << "Timing" << endl;
+		ReleaseSemaphore(g_hProcSemaphore, 1, NULL);
+		
+		Sleep(2000);
+		/*
+		for(int i = 0, i < pointvector.count; i++)
+		{
+			FormateData();
+			SendData();
+			sleep(2000 / pointvector.count);
+		}
 
- //��ȡ����ͷ
- CvCapture* pCapture = cvCreateCameraCapture(0);
- ////
- //// //��������
-  cvNamedWindow("video", 1);
-	int intCount=0;
-  //cvNamedWindow("result",1);	
- 
-  //��ʾ����
-  
-   //getchar();
-  while(1)
-  {
-	 cv::Mat image;
-	 
-	double duration;
-	duration = static_cast<double>(cv::getTickCount());
-	
-	//image = processImage(imread("E:\\���Ӷ�λ\\pictures\\20140526\\Color_120_4.jpg"));
+		*/
 
-	//duration = static_cast<double>(cv::getTickCount()) - duration;
-	//duration /= cv::getTickFrequency();
-	//cout << duration << endl;
-   	 //imshow("hello",image);
-	 //cv::waitKey();
-     pFrame=cvQueryFrame( pCapture );
-	  Mat fr(pFrame);
-	  
-	  fr = processImage(fr);
-      if(!pFrame)break;
-	 // vector<Mat> planes;
-	 // cv::split(fr,planes);
-      imshow("video",fr);
-	  //waitKey();
-	  //waitKey(100);
-      char c=cvWaitKey(100);
-	  //int intCount = 0;
-	  string s = "Color_120_";
-	  if(c=='s')
-	  {
-		  stringstream streamCount;
-		  streamCount << intCount;
-		  string stringCount;
-		  streamCount >> stringCount;
-		  string fileName = s + stringCount+".jpg";
-		  cout << (cvSaveImage(fileName.c_str(),pFrame)? fileName+" Saved!" : "Can't be saved") << endl;
-		 
-		 //image = processImage(imread(fileName));
-		  
-		 imwrite(fileName,fr);
-		// imshow("result",image);
-		 intCount++;
-		  
-	 }
-
-  }
-
-	////cvReleaseCapture(&pCapture);
-	////cvDestroyWindow("video");
-	////cvDestroyWindow("result");
-  
-  return 0;
+		//Sleep(2000);
+		
+	}
 
 }
 
-
- Mat& processImage(Mat& mat)
- {
-
-	 
-	
-	 Mat tempMat = mat.clone();
-	//��˹�˲�����ֵ�˲�
-	cvtColor(mat,tempMat,CV_RGB2GRAY);
-	
-	GaussianBlur(tempMat,tempMat,Size(13,13),0.5,0.5);
-	
-	medianBlur(tempMat,tempMat,7);
-	
-	//imshow("blur",tempMat);
-	//waitKey();
-	//��Ӱ��һ��
-	/*cv::Mat element(19,9,CV_8U,cv::Scalar(1));
-	Mat tophatMat;
-	cv::morphologyEx(tempMat,tophatMat,cv::MORPH_TOPHAT,element);
-	Mat blackhatMat;
-	cv::morphologyEx(tempMat,blackhatMat,cv::MORPH_BLACKHAT,element);
-	cv::add(tempMat,tophatMat,tophatMat);
-	cv::addWeighted(tophatMat,1,blackhatMat,-1,0,tempMat);*/
-	
-	Mat bw;// = (tempMat < 110);
-	
-	cv::adaptiveThreshold(tempMat,bw,255,cv::ADAPTIVE_THRESH_GAUSSIAN_C,cv::THRESH_BINARY_INV,71,10);
-	imshow("bw",bw);
-	waitKey();
-	//imwrite("bw.jpg",bw);
-	
-	bw = bwLabelForce(bw,0.001);
-
-	for(int i=1; i<(mat.size()).height; ++i)
+DWORD WINAPI ImgProcThread(LPVOID param)
+{
+	while (true)
 	{
-		uchar* pMat = mat.ptr<uchar>(i);
-		uchar* pBw = bw.ptr<uchar>(i);
-		for(int j=1; j<(mat.size()).width; ++j)
+		WaitForSingleObject(g_hProcSemaphore, INFINITE);
+		if (g_pointCount < 14)
 		{
-			if(255 ==pBw[j])
+			FormateData(g_vP[g_pointCount], g_vS[g_pointCount], g_buffer);
+			g_pointCount++;
+			cout << "Processing" << "Y: " << g_vP[g_pointCount].y << endl;
+			ReleaseSemaphore(g_hTimingSemaphore, 1, NULL);
+		}
+		//Sleep(500);
+	}
+}
+
+void StartWeld()
+{
+	//原点
+	Point3i originPoint(0,0,0);
+	//焊条起焊准备点
+	Point3i readyPoint(8000,4000,0);
+	//前往焊条起焊准备点的速度
+	Speed goReaPoiSpeed(3000,3000,3000);
+	FormateData(readyPoint, goReaPoiSpeed, g_buffer);
+	//FormateData(Point3i(8000, 4000, 0), Speed(3000, 3000, 3000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(MoveTime(originPoint,readyPoint,goReaPoiSpeed));
+	//Sleep(10000);
+
+
+	//焊条下降点（点火点）
+	Point3i downPoint(8000, 4000, 17000);
+	//前往点火点速度
+	Speed goDownPoiSpeed(3000, 3000, 40000);
+	FormateData(downPoint, goDownPoiSpeed, g_buffer);
+	//FormateData(Point3i(8000, 4000, 17000), Speed(3000, 3000, 40000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(MoveTime(readyPoint, downPoint,goDownPoiSpeed));
+	//Sleep(1100);
+
+
+	//焊条点火以后抬起点
+	Point3i upPoint(8000, 4000, 15000);
+	//点火后抬起速度
+	Speed goUpPoiSpeed(3000, 3000, 20000);
+	FormateData(upPoint, goUpPoiSpeed, g_buffer);
+	//FormateData(Point3i(8000, 4000, 15000), Speed(3000, 3000, 20000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(MoveTime(downPoint ,upPoint, goUpPoiSpeed));
+	//Sleep(1100);
+
+
+	////焊条抬起后压低点（起焊点）
+	//Point3i Point(8000, 4000, 15000);
+	////前往压低点速度
+	//Speed goUpPoiSpeed(3000, 3000, 20000);
+	//FormateData(upPoint, goUpPoiSpeed, g_buffer);
+	////FormateData(Point3i(8000, 4000, 15000), Speed(3000, 3000, 20000), g_buffer);
+	//SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	//Sleep(MoveTime(downPoint, upPoint, goUpPoiSpeed));
+	////Sleep(1100);
+}
+
+void StartWeldTest()
+{
+	//Mat img(100, 300, CV_8UC1, Scalar(255));
+	//putText(img, "Start", Point(90, 60), 1, 3, Scalar(0));
+
+	//准备
+	FormateData(Point3i(106* 1000 / 3, 52 * 1000 / 3, 10 * 1000 / 3), Speed(30000, 30000, 3000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(2000);
+	//下压
+	FormateData(Point3i(106 * 1000 / 3, 52 * 1000 / 3, 40 * 1000 / 3), Speed(3000, 3000, 80000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(100);
+	
+	//抬起
+	FormateData(Point3i(106 * 1000 / 3, 52 * 1000 / 3,  31* 1000 / 3), Speed(2500, 2500, 20000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(600);
+	//压低
+	FormateData(Point3i(106 * 1000 / 3, 52 * 1000 / 3, 37 * 1000 / 3), Speed(2500, 2500, 30000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(800);
+	//朝目标点移动
+	FormateData(Point3i(600 * 1000 / 3, 52 * 1000 / 3, 320 * 1000 / 3), Speed(1850, 0, 950), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	
+	//抬起
+	FormateData(Point3i(600 * 1000 / 3, 52 * 1000 / 3, 0), Speed(1800, 0, 20000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+ 	Sleep(10000);
+	Mat img(100, 300, CV_8UC1, Scalar(255));
+	putText(img, "Start", Point(90, 60), 1, 3, Scalar(0));
+	//准备
+	FormateData(Point3i(10000, 10000, 10000), Speed(3000, 3000, 3000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(5000);
+	//下压
+	FormateData(Point3i(30000, 28000, 13500), Speed(3000, 3000, 30000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(800);
+	//抬起
+	FormateData(Point3i(100000, 28000, 11500), Speed(2500, 2500, 30000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(200);
+	//压低
+	FormateData(Point3i(100000, 28000, 12000), Speed(2500, 2500, 30000), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(800);
+	//朝目标点移动
+	FormateData(Point3i(180000, 28000, 77000), Speed(2500, 2500, 950), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+
+
+	imshow("wait", img);
+	waitKey(30000);
+	//抬起
+
+}
+
+void WeldTest()
+{
+	FormateData(Point3i(1, 1000, 2000), Speed(90000, 20000, 0), g_buffer);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+	Sleep(3000);
+	for (int i = 0; i < 15; i++)
+	{
+		FormateData(Point3i(10000, 0, 0), Speed(25000, 0, 0), g_buffer);
+		SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+		Sleep(1000);
+	}
+
+}
+
+double ComputeDistance()
+{
+	int x1, y1, x2, y2;
+	cin >> x1 >> y1 >> x2 >> y2;
+	return sqrt(1.0*(x1 - x2)*(x1 - x2) + 1.0*(y1 - y2)*(y1 - y2));
+
+}
+double ConvertPixelToMillimeter(int pixel)
+{
+	const double pixel2millimeter = 39.01;
+	
+	double millimeter = pixel / pixel2millimeter;
+	
+	return millimeter;
+}
+
+int main()
+{
+	
+	bool ini = InitCom(g_hCom, g_wrOverlapped);
+	
+	VideoCapture cap(0); // open the default camera
+	if ( !cap.isOpened() )
+	{
+		std::cout << "Camera is not opened!" << endl;
+		return 1;
+	}
+	//cap.set(CV_CAP_PROP_FRAME_WIDTH,1024.0);
+	//cap.set(CV_CAP_PROP_FRAME_HEIGHT,768.0);
+	Mat frame (768, 1024, CV_32FC3, Scalar::all(255.0));
+	
+	vector<Mat> frames;
+	int count = 0;
+	for (;;){
+		bool readSucceed = cap.read(frame); // get a new frame from camera
+		if (readSucceed){
+			frames.push_back(frame);
+		}
+		else{
+			std::cout << "Camera read failed !" << endl;
+			continue;
+		}
+
+		int frameNumber = 1;
+		if (frameNumber == frames.size())
+		{
+			Mat resFrame = frames[0]/frameNumber;
+			for (int i = 1; i < frameNumber; i++)
 			{
-				pMat[3*j] = 0;
-				pMat[3*j+1] = 0;
-				pMat[3*j+2] = 255;
+				resFrame = (resFrame + frames[i]/frameNumber);
 			}
+			//imshow("resFrame", resFrame);
+			//waitKey();
+			Point contourCenter(0, 0);
+			double contourWidth = 0.0;
+			double contourLength = 0.0;
+			double contourTheta = 0.0;
+			bool proImg = ProcessImg(resFrame,contourCenter,contourTheta, contourWidth,contourLength);
+
+			Point distancePoint(contourCenter.x, contourCenter.y);
+			RotatePoint(distancePoint, 1.0 / 180 * CV_PI);
+			long long distanceX = (ConvertPixelToMillimeter(contourCenter.x) - XOFFSET) * 1000 / 3;
+			long long distanceY = (ConvertPixelToMillimeter(contourCenter.y) - YOFFSET) * 1000 / 3;
+			distanceX = 1.0 * contourCenter.x / 280 * 1000 / 0.3;
+			distanceY = 1.0 * contourCenter.y / 280 * 1000 / 0.3;
+			circle(resFrame, Point(cvRound(contourCenter.x), cvRound(contourCenter.y)), contourWidth/2, Scalar(0, 0, 255), 3);
+			imshow("video", resFrame);
+			
+			int ySp = 200;
+			int xSp = 2000;
+			FormateData(Point3i(distanceX, distanceY, 0), Speed(xSp, ySp, 0), g_buffer, ControlFlag::RELATIVE_POSITION);
+			SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+			
+
+			//Sleep(1000);
+			
+			int step = 5000;
+			distanceX = step * cos(contourTheta);
+			distanceY = step * sin(contourTheta);
+			
+			vector<cv::Point3i> zigzag_point;
+			zigzag_point = MoveMachineArm(Point3i(distanceX, distanceY, 0), contourTheta, contourWidth);
+			//FormateData(Point3i(distanceX, distanceY, 0), Speed(5000, 5000, 0), g_buffer, ControlFlag::RELATIVE_POSITION);
+			for (int i = 0; i < zigzag_point.size(); i++)
+			{
+				FormateData(zigzag_point[i], Speed(5000, 5000, 0), g_buffer, ControlFlag::RELATIVE_POSITION);
+				SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+				Sleep(1000 / zigzag_point.size());
+			}
+			
+			Sleep(1000);
+			
+			char c = waitKey(1000);
+			if ('s' == c){
+				SaveImg(resFrame, count);
+				count++;
+			}
+			if ('a' == c){
+				FormateData(Point3i(0, 0, 0), Speed(4000, 0, 0), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+				SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+				break;
+			}
+		frames.clear();
 		}
 	}
 
-	imshow("mat",mat);
-	waitKey();
+	//bool ini = InitCom(g_hCom, g_wrOverlapped);
 
-	//vector<Point> location = getLocate(bw);
-
+	g_hTimingSemaphore = CreateSemaphore(NULL, 0, 1, NULL);
+	g_hProcSemaphore = CreateSemaphore(NULL, 0, 1, NULL);
 	
-	/*if(!location.empty())
-	{
-		cv::circle(mat,location[0],10,Scalar(0,255,255));
-		cv::circle(mat,location[1],10,Scalar(0,255,255));
-		
-		//double disX0 = (768-(int)location[0].y)/19.8 + 6.2;
-		//double disY0 = (int)location[0].x/19.8 - 28.8;
+	CreateThread(NULL, 0, TimingThread, NULL, NULL, NULL);
+	CreateThread(NULL, 0, ImgProcThread, NULL, NULL, NULL);
 
-		//double disX1 = (768-(int)location[1].y)/19.8 + 6.2;
-		//double disY1 = (int)location[1].x/19.8 -28.8;
-		//unsigned int x0Pulse = disX0 / 3 * 10000;
-		//unsigned int y0Pulse = disY0 / 3 * 10000;
-		//unsigned int x1Pulse = disX1 / 3 * 10000;
-		//unsigned int y1Pulse = disY1 / 3 * 10000;
-
-		//string x0;
-		//stringstream tempStream;
-		//tempStream << location[0].x;
-		//x0 = tempStream.str();
-		////cout << x0 << endl;
-		//tempStream << x1Pulse;
-		//tempStream << y0Pulse;
-		//tempStream << y1Pulse;
-		//cv::putText(mat,x0,Point(location[0].x,location[0].y-20),0,0.6,Scalar(255,0,255),1);
-		//cout << "x0Pulse: " << x0Pulse << "  " << "y0Pulse: " << y0Pulse << "   " << "x1Pulse: " << x1Pulse << "  " << "y1Pulse: " << y1Pulse<< endl;
-
-		vector<string> locationText = getLocationText(location);
-		for(int i=0; i < locationText.size(); ++i)
-		{
-			cv::putText(mat,locationText[i],Point(location[i].x-250,location[i].y-40),0,0.4,Scalar(0,0,255),1);
-			//cv::putText(mat,locationText[i],Point(location[i].x-500,location[i].y-20),FONT_HERSHEY_DUPLEX,0.4,Scalar(0,255,255),1);
-			cout << locationText[i] << endl;
-		}
-	}
-	else
-		cout << "No fitable area!" << endl;
-
-
-	//imshow("mat",mat);
-	//waitKey();
-	//vector<vector<Point> >contours,resContours;
-	//cv::findContours(bw,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
-	//	
-	//for(int i=0; i < contours.size(); ++i)
-	//{
-	//	//cout << i << ": " << contourArea(contours[i]) << endl;
-	//	if(cv::contourArea(contours[i])<2000 && cv::contourArea(contours[i])>1000)
-	//	{
-	//		resContours.push_back(contours[i]);
-	//	}
-	//	
-	//}
-	//cv::Mat result(bw.size(),CV_8U,cv::Scalar(255));
-	//cv::drawContours(mat,resContours,-1,cv::Scalar(255, 255,255),1);
-	////imshow("mat",mat);
-	//imshow("result1",mat);
-	*/
-	return mat;
- }
+	StartWeldTest();
+	
+	return 0;
+}

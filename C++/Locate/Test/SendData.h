@@ -13,6 +13,7 @@ using namespace std;
 using namespace cv;
 
 enum ControlFlag{ABSOLUTE_POSITION = 1,RELATIVE_POSITION = 3};
+
 struct Speed
 { 
 	int xSpeed; int ySpeed; int zSpeed; 

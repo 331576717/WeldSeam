@@ -26,10 +26,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="findContourEdge.cpp">
-      <Filter>源文件</Filter>
+    <ClCompile Include="MoveMachineArm.h">
+      <Filter>头文件</Filter>
     </ClCompile>
-    <ClCompile Include="MoveMachineArm.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

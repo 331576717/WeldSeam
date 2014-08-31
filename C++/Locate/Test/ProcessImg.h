@@ -12,6 +12,7 @@ using namespace cv;
 using namespace std;
 
 int SaveImg(Mat mat, int flag);
+
 bool ProcessImg(Mat& img, Point& center, double& theta, double& width, double& length);
 
 Mat localOTSU(Mat img, Size block);
