@@ -8,28 +8,43 @@
 #include <cassert>
 #include <opencv2\highgui\highgui.hpp>
 #include <opencv2\core\core.hpp>
+#include "SendData.h"
 
+
+void RotatePoint(cv::Point3i &p,const double theta);
 //
 //接受焊缝坐标信息，生成机械臂移动轨迹坐标
-int MoveMachineArm(cv::Point3d point,double weld_line_width,double weld_direction,double offset_direction);
+int MoveMachineArm(cv::Point point,double weld_line_width,double weld_direction,double offset_direction);
 //point:焊缝中心坐标
 //weld_line_width:焊缝宽度
 //weld_direction：焊缝方向
 //offset_direction:模拟声称点便宜方向
 
+extern char g_buffer[32];
+
 //for test use
-int main()
+//int main()
+//{
+//	//测试数据
+//	cv::Point3d p1;
+//	double weld_line_width = 0.1;
+//	double weld_direction  = 0.1;//以
+//	double offset_direction = 0.1;
+//
+//	//
+//	MoveMachineArm(p1,weld_line_width,weld_direction,offset_direction);
+//
+//	return 0;
+//}
+
+void RotatePoint(cv::Point3i &p, const double theta)
 {
-	//测试数据
-	cv::Point3d p1;
-	double weld_line_width = 0.1;
-	double weld_direction  = 0.1;//以
-	double offset_direction = 0.1;
-
-	//
-	MoveMachineArm(p1,weld_line_width,weld_direction,offset_direction);
-
-	return 0;
+	double cosTheta = cos(theta);
+	double sinTheta = sin(theta);
+	int tempX = p.x;
+	int tempY = p.y;
+	p.x = tempX*cosTheta - tempY*sinTheta + 0.5;
+	p.y = tempX*sinTheta + tempY*cosTheta + 0.5;
 }
 
 /*
@@ -37,13 +52,15 @@ int main()
 *
 *
 */
-int MoveMachineArm(cv::Point3d point,double weld_line_width,double weld_direction,double offset_direction)
+//int MoveMachineArm(cv::Point3d point,double weld_line_width,double weld_direction,double offset_direction)
+vector<cv::Point3i> MoveMachineArm(cv::Point3i point, const double theta, const double weld_line_width)
 {
 	//传入数据判断是否有问题
 	//assert((point.x >=0 && point.y >= 0) && (weld_line_width >= 0) && (weld_direction >= 0));
-	if(!((point.x >=0 && point.y >= 0) && (weld_line_width >= 0) && (weld_direction >= 0)))	
-		return 1;
+	if(!((point.x >=0 && point.y >= 0) && (weld_line_width >= 0)))	
+		exit(0);
 
+	vector<cv::Point3i> weldtrack;
 	//根据weld_line_width进行运算，决定要采取的焊接方式
 	enum weld_way{straight_line,zigzag };
 	typedef unsigned weld_way_;
@@ -61,26 +78,33 @@ int MoveMachineArm(cv::Point3d point,double weld_line_width,double weld_directio
 		//锯齿形，
 	case zigzag:
 		{
+			cv::Point3i up_point;
+			cv::Point3i down_point;
+			//Speed zigzag_speed(8000, 4000, 17000);
+			//点旋转
+			RotatePoint(point, 0-theta);
 			//模拟出来的焊缝上面点
-			double up_x = point.x + (weld_line_width / 2 / cv::cos(weld_direction))/(cv::cos(weld_direction + offset_direction) / 
-				cv::sin(weld_direction + offset_direction) - cv::sin(weld_direction) / cv::cos(weld_direction));
-			double up_y = (up_x - point.x) * cv::cos(weld_direction + offset_direction) / cv::sin(weld_direction + offset_direction) 
-				+ point.y;
-			//模拟出来的焊缝下面点
-			double down_x = point.x - (weld_line_width / 2 / cv::cos(weld_direction))/(cv::cos(weld_direction + offset_direction) / 
-				cv::sin(weld_direction + offset_direction) - cv::sin(weld_direction) / cv::cos(weld_direction));
-			double down_y = (down_x - point.x) * cv::cos(weld_direction + offset_direction) / cv::sin(weld_direction + offset_direction) 
-				+ point.y;
+			up_point.x = point.x - weld_line_width / 2;
+			up_point.y = point.y - weld_line_width / 2;
 
-			//formatdata()
-			//senddata()
+			//模拟出来的焊缝下面点
+			down_point.x = point.x + weld_line_width / 2;
+			down_point.y = point.y + weld_line_width / 2;
+			
+			RotatePoint(up_point, theta);
+			RotatePoint(down_point, theta);
+			
+			weldtrack.push_back(up_point);
+			weldtrack.push_back(down_point);
+			//FormateData(up_point, zigzag_speed, g_buffer);
+	
 			break;
 		}
 	default:
 		break;
 	}
 
-	return 0;
+	return weldtrack;
 }
 
 #endif

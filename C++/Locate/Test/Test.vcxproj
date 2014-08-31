@@ -75,8 +75,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>F:\opencv\build\include\opencv2;F:\opencv\build\include\opencv;F:\opencv\build\include;$(IncludePath)</IncludePath>
-    <LibraryPath>F:\opencv\build\x64\vc12\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>D:\INSTALLSOFTWARE\opencv\build\include;D:\INSTALLSOFTWARE\opencv\build\include\opencv2;D:\INSTALLSOFTWARE\opencv\build\include\opencv;$(IncludePath)</IncludePath>
+    <LibraryPath>D:\INSTALLSOFTWARE\opencv\build\x64\vc12\lib;$(LibraryPath)</LibraryPath>
     <GenerateManifest>false</GenerateManifest>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -157,13 +157,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="BFS.h" />
     <ClInclude Include="ProcessImg.h" />
     <ClInclude Include="SendData.h" />
     <ClInclude Include="TestDemo.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="findContourEdge.cpp" />
+    <ClCompile Include="MoveMachineArm.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
