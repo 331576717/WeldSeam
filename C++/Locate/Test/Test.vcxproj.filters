@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="BFS.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="ProcessImg.h">
       <Filter>头文件</Filter>
     </ClInclude>

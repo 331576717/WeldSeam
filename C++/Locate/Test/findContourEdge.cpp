@@ -1,4 +1,7 @@
-﻿#include <iostream>
+﻿#ifndef _FIND_CONTOUR_EDGE
+#define _FIND_CONTOUR_EDGE
+
+#include <iostream>
 #include <vector>
 #include <deque>
 #include <opencv2/core/core.hpp>
@@ -16,6 +19,7 @@
 #include "ProcessImg.h"
 #include "SendData.h"
 #include "TestDemo.h"
+#include "MoveMachineArm.cpp"
 
 using namespace cv;
 using namespace std;
@@ -41,7 +45,17 @@ DWORD WINAPI TimingThread(LPVOID param)
 		cout << "Timing" << endl;
 		ReleaseSemaphore(g_hProcSemaphore, 1, NULL);
 		
-		Sleep(2000);
+		/*
+		for(int i = 0, i < pointvector.count; i++)
+		{
+			FormateData();
+			SendData();
+			sleep(2000 / pointvector.count);
+		}
+
+		*/
+
+		//Sleep(2000);
 		
 	}
 
@@ -207,8 +221,17 @@ int main()
 			int step = 5000;
 			distanceX = step * cos(contourTheta);
 			distanceY = step * sin(contourTheta);
-			FormateData(Point3i(distanceX, distanceY, 0), Speed(5000, 5000, 0), g_buffer, ControlFlag::RELATIVE_POSITION);
-			SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+			
+			vector<cv::Point3i> zigzag_point;
+			zigzag_point = MoveMachineArm(Point3i(distanceX, distanceY, 0), contourTheta, contourWidth);
+			//FormateData(Point3i(distanceX, distanceY, 0), Speed(5000, 5000, 0), g_buffer, ControlFlag::RELATIVE_POSITION);
+			for (int i = 0; i < zigzag_point.size(); i++)
+			{
+				FormateData(zigzag_point[i], Speed(5000, 5000, 0), g_buffer, ControlFlag::RELATIVE_POSITION);
+				SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
+				Sleep(1000 / zigzag_point.size());
+			}
+			
 			//Sleep(1000);
 			
 			char c = waitKey(1000);
@@ -370,3 +393,4 @@ int main()
 	return 0;
 }
 
+#endif
