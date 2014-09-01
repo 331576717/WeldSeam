@@ -17,6 +17,7 @@
 #include "SendData.h"
 #include "TestDemo.h"
 #include "MachineArmControl.h"
+#include "MovePath.h"
 
 using namespace cv;
 using namespace std;
@@ -217,7 +218,7 @@ double ConvertPixelToMillimeter(int pixel)
 
 int main()
 {
-
+	TestMotionPath();
 	bool ini = InitCom(g_hCom, g_wrOverlapped);
 
 	VideoCapture cap(0); // open the default camera

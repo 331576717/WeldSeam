@@ -158,6 +158,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="MachineArmControl.h" />
+    <ClInclude Include="MotionPath.h" />
     <ClInclude Include="ProcessImg.h" />
     <ClInclude Include="SendData.h" />
     <ClInclude Include="TestDemo.h" />

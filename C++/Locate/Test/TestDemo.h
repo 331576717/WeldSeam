@@ -3,39 +3,28 @@
 
 #include <iostream>
 #include <vector>
-#include <deque>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <direct.h>
-#include <time.h>
-#include <io.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <algorithm>
-#include <Windows.h>
-#include <fstream>
 
-Point TestPoint()
+
+#include "MovePath.h"
+
+
+void TestMotionPath()
 {
-	Point i(3, 5);
-	return i;
-}
+	Mat img(1000, 300, CV_8UC1, Scalar(255));
+	putText(img, "Start", Point(90, 60), 1, 3, Scalar(0));
 
-int TestHoughLines(Mat img)
-{
-	Mat dst, color_dst;
-
-	Canny(img, dst, 50, 200, 3);
-
-	vector<Vec2f> lines;
-	HoughLines(dst, lines, 1, CV_PI / 180, 180, 0, 0);
-	return 0;
-
-}
-
-void TestSendData()
-{
+	for (size_t i = 0; i < 10; i++)
+	{
+		Point center(i * 20, i * 20);
+		vector<Point> pathPoints = GenerateZigzagPath(center, 0.25*CV_PI, 10, 10);
+		for (int j = 0; j < pathPoints.size(); j++)
+			circle(img, Point(cvRound(pathPoints[i].x), cvRound(pathPoints[i].y)), 2, Scalar(0, 0, 255), 2);
+	}
+	imshow("motion", img);
+	waitKey();
 
 }
 
