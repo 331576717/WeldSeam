@@ -11,7 +11,7 @@
 
 using namespace std;
 
-inline void RotateCenter(cv::Point3i &p, const double theta);
+void RotateCenter(cv::Point3i &p, const double theta);
 
 //接受焊缝坐标信息，生成机械臂移动轨迹坐标
 vector<cv::Point3i> MoveMachineArm(cv::Point3i point, const double theta, const double weld_line_width);

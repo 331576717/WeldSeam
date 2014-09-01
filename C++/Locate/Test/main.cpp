@@ -17,7 +17,8 @@
 #include "SendData.h"
 #include "TestDemo.h"
 #include "MachineArmControl.h"
-#include "MovePath.h"
+//#include "MotionPath.h"
+
 
 using namespace cv;
 using namespace std;

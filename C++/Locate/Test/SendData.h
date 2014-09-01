@@ -181,5 +181,4 @@ double MoveTime(Point3i start, Point3i end, Speed sp, double delay = 0)
 	else
 		return yTime > zTime ? yTime : zTime;
 }
-
 #endif
