@@ -13,11 +13,13 @@
 #include <Windows.h>
 #include <fstream>
 
+#include "MotionPath.h"
 #include "ProcessImg.h"
-#include "SendData.h"
+
 #include "TestDemo.h"
+#include "SendData.h"
 #include "MachineArmControl.h"
-//#include "MotionPath.h"
+
 
 
 using namespace cv;
