@@ -164,6 +164,7 @@
     <ClInclude Include="TestDemo.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="MachineArmControl.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MotionPath.cpp" />
     <ClCompile Include="SendData.cpp" />

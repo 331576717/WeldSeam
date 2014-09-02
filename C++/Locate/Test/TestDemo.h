@@ -8,10 +8,10 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include "SendData.h"
-#include "MotionPath.h"
+//#include "MotionPath.h"
 
 
-void TestMotionPath()
+/*void TestMotionPath()
 {
 	Mat img(500, 500, CV_8UC1, Scalar(255));
 	putText(img, "Start", Point(90, 60), 1, 3, Scalar(0));
@@ -27,6 +27,6 @@ void TestMotionPath()
 	imshow("motion", img);
 	waitKey();
 
-}
+}*/
 
 #endif
