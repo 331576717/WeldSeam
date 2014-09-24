@@ -225,15 +225,20 @@ bool ProcessImg(Mat& img, Point& contourCenter, double& contourTheta, double& co
 	medianBlur(grayimg, grayimg, 7);
 	
 	//大津法阈值分割
-	cv::threshold(grayimg,grayimg,50,70,THRESH_OTSU);
-	//imshow("bw", grayimg);
-	//waitKey();
+	//cv::threshold(grayimg,grayimg,50,70,THRESH_OTSU);
+	grayimg = grayimg < 40;
+	imshow("bw", grayimg);
+	waitKey();
 
 	//轮廓识别
 	vector<vector<Point>> contours;
 	vector<vector<Point>> resContours;
 	findContours(grayimg, contours, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_NONE);
 	
+	/*drawContours(grayimg, contours, 3, Scalar(200, 100, 100), CV_FILLED, 8);
+	imshow("b", grayimg);
+	waitKey();*/
+
 	//找出符合条件的所有轮廓线
 	for (int i = 0; i < contours.size(); i++){
 		//设定轮廓面积的上限与下限
@@ -269,8 +274,8 @@ bool ProcessImg(Mat& img, Point& contourCenter, double& contourTheta, double& co
 	}
 
 	contourTheta = GetTheta(houghImg);
-	//imshow("houghImg", houghImg);
-	//waitKey();
+	imshow("houghImg", houghImg);
+	waitKey();
 	
 	bool findCenter = GetCenterAndWidthAndLength(contourPoints, contourTheta, contourCenter, contourWidth, contourLength);
 	return true;
