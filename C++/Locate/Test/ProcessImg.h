@@ -8,6 +8,7 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <iostream>
 #include <algorithm>
+#include <cstdlib>
 
 using namespace cv;
 using namespace std;
@@ -67,7 +68,7 @@ bool GetCenterAndWidthAndLength(vector<Point>& vecPoints, const double theta, Po
 	int step = 20;
 	int maxCount = 0;
 	int maxStart = 0;
-	for (int i = 0; i < vecPoints.size(); i++){
+	/*for (int i = 0; i < vecPoints.size(); i++){
 		if (abs(vecPoints[i].x - vecPoints[currentStart].x) < windowSize){
 			pCount++;
 			if (abs(vecPoints[i].x - vecPoints[currentStart].x - step) < 3){
@@ -83,7 +84,7 @@ bool GetCenterAndWidthAndLength(vector<Point>& vecPoints, const double theta, Po
 			i = nextStart;
 			currentStart = nextStart;
 		}
-	}
+	}*/
 
 	/*for (int i = 0; i < maxCount; i++)
 	{
@@ -209,6 +210,13 @@ int SaveImg(Mat mat, int flag)
 	return save;
 }
 
+/*vector<Point3i> findCenters()
+{
+	;
+}
+*/
+
+
 bool ProcessImg(Mat& img, Point& contourCenter, double& contourTheta, double& contourWidth, double& contourLength)
 {
 	
@@ -225,9 +233,17 @@ bool ProcessImg(Mat& img, Point& contourCenter, double& contourTheta, double& co
 	medianBlur(grayimg, grayimg, 7);
 	
 	//大津法阈值分割
-	//cv::threshold(grayimg,grayimg,50,70,THRESH_OTSU);
-	grayimg = grayimg < 40;
+	cv::threshold(grayimg,grayimg,0,255,THRESH_OTSU);
+	//grayimg = grayimg < 45;
 	imshow("bw", grayimg);
+
+	//
+	
+
+
+	
+	//
+
 	waitKey();
 
 	//轮廓识别
@@ -242,14 +258,15 @@ bool ProcessImg(Mat& img, Point& contourCenter, double& contourTheta, double& co
 	//找出符合条件的所有轮廓线
 	for (int i = 0; i < contours.size(); i++){
 		//设定轮廓面积的上限与下限
-		int maxArea = 90000;
+		int maxArea = 9000000;
 		int minArea = 1000;
 		double tmpContourArea = contourArea(contours[i]);
 		double ratioOfPerimeterArea = 1.0 * contours[i].size() / tmpContourArea;
 		double ratioOfPerimeterAreaThreshold = 0.02;
 
-		if (tmpContourArea < maxArea && tmpContourArea > minArea 
-				&& ratioOfPerimeterArea > ratioOfPerimeterAreaThreshold){
+		if (tmpContourArea < maxArea && tmpContourArea > minArea )
+				//&& ratioOfPerimeterArea > ratioOfPerimeterAreaThreshold)
+		{
 			resContours.push_back(contours[i]);
 		}
 	}
@@ -260,24 +277,86 @@ bool ProcessImg(Mat& img, Point& contourCenter, double& contourTheta, double& co
 		return false;
 	}
 
+
 	
 	Mat houghImg(img.size(), CV_8U, Scalar::all(0));
-
 	vector<Point> contourPoints;
 	for (size_t i = 0; i < resContours.size(); i++)
 	{
 		//在空白图上绘制所有符合条件的轮廓，用于求总体的斜率
 		drawContours(houghImg, resContours, i, 255, 1);
-		
+		drawContours(img, resContours, i, Scalar(0, 0, 255), 1);
 		//合并符合条件的所有轮廓用于计算中心和宽度
 		contourPoints.insert(contourPoints.end(), resContours[i].begin(), resContours[i].end());
 	}
 
+
+
+
 	contourTheta = GetTheta(houghImg);
 	imshow("houghImg", houghImg);
+	
+	////////
+	
+	struct edge
+	{
+		int x[4];
+		int y[4];
+		int count;
+	};
+	
+	//edge* pos = (edge *)malloc(int((houghImg.size()).width) * sizeof(edge));
+	//edge* pos_y = (edge *)malloc(int((houghImg.size()).width) * sizeof(edge));
+	
+	//int *pos_c = (int *)malloc(int((houghImg.size()).width) * sizeof(int)); // 记录图像的每一列有几个边线点
+	
+	//memset(pos_c, 0, int((houghImg.size()).width) * sizeof(int));  
+	
+	vector<edge> edges;
+	edge edg;
+
+	for (size_t i = 0; i < int((houghImg.size()).width); ++i)
+	{
+		edg.count = 0;
+		for (size_t j = int((houghImg.size()).height * 0.1 ) ; j < int((houghImg.size()).height); ++j)
+		{
+			uchar* p = houghImg.ptr<uchar>(j);
+			if (p[i] > 100)
+			{
+				if (edg.count >= 4) break;
+				edg.x[edg.count] = i;
+				edg.y[edg.count] = j;
+				edg.count++;
+			}
+
+		}
+
+		if (edg.count == 3)
+			edges.push_back(edg);
+
+	}
+
+
+	for (int i = 0; i < edges.size(); i++)
+	{
+		edg = edges[i];
+		int x = edg.x[0];
+		int y = (edg.y[0] + edg.y[1] + 0.5) / 2;
+		houghImg.ptr<uchar>(y)[x] = 255;
+	}
+
+
+	imshow("houghImg2", houghImg);
+
+	////////
+	
+	
 	waitKey();
 	
 	bool findCenter = GetCenterAndWidthAndLength(contourPoints, contourTheta, contourCenter, contourWidth, contourLength);
+	circle(img, contourCenter, contourWidth / 2, Scalar(255, 255, 255), 1);
+	imshow("res", img);
+	waitKey();
 	return true;
 	
 }

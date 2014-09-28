@@ -6,6 +6,7 @@
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include "ProcessImg.h"
 
 #include "SendData.h"
 //#include "MotionPath.h"
@@ -28,5 +29,16 @@
 	waitKey();
 
 }*/
-
+void testImg()
+{
+	Mat mat = imread("C:\\Users\\James\\Desktop\\2014-09-25\\15-05-28.bmp");
+	Point contourCenter(0, 0);
+	double contourWidth = 0.0;
+	double contourLength = 0.0;
+	double contourTheta = 0.0;
+	bool proImg = ProcessImg(mat, contourCenter, contourTheta, contourWidth, contourLength);
+	circle(mat, contourCenter, 12, Scalar(255, 0, 0), 1);
+	imshow("res", mat);
+	waitKey();
+}
 #endif

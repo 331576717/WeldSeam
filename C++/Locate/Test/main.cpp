@@ -17,7 +17,7 @@
 #include "ProcessImg.h"
 #include "SendData.h"
 #include "MachineArmControl.h"
-
+#include "TestDemo.h"
 
 
 using namespace cv;
@@ -220,14 +220,28 @@ double ConvertPixelToMillimeter(int pixel)
 	return millimeter;
 }
 
+void testMove()
+{
+	FormateData(Point3i(10000, 10000, 10000), Speed(50000, 50000, 10000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+	SendData(g_hCom, g_wrOverlapped, g_buffer, 32);
+	Sleep(2000);
+	for (size_t i = 1; i < 15; i++)
+	{
+		FormateData(Point3i(10000+3000*i,10000,10000), Speed(2000,10000,10000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+		SendData(g_hCom, g_wrOverlapped, g_buffer, 32);
+		Sleep(1000);
+	}
+}
+
 int main()
 {
 	
-	bool ini = InitCom(g_hCom, g_wrOverlapped);
+	
+	testImg();
 	//FormateData(Point3i(10000,10000,10000), Speed(10000,10000,10000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 	//SendData(g_hCom, g_wrOverlapped, g_buffer, 32);
-
-	StartWeldTest();
+	bool ini = InitCom(g_hCom, g_wrOverlapped);
+	//StartWeldTest();
 
 	VideoCapture cap(0); // open the default camera
 	if (!cap.isOpened())
@@ -266,7 +280,7 @@ int main()
 			double contourLength = 0.0;
 			double contourTheta = 0.0;
 			bool proImg = ProcessImg(resFrame, contourCenter, contourTheta, contourWidth, contourLength);
-			circle(resFrame, contourCenter, 2, Scalar(255, 0, 0), 1);
+			circle(resFrame, contourCenter, contourWidth/2, Scalar(255, 0, 0), 1);
 			imshow("res", resFrame);
 			waitKey();
 			Sleep(1000);
