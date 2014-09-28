@@ -237,11 +237,11 @@ int main()
 {
 	
 	
-	testImg();
+	//testImg();
 	//FormateData(Point3i(10000,10000,10000), Speed(10000,10000,10000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 	//SendData(g_hCom, g_wrOverlapped, g_buffer, 32);
 	bool ini = InitCom(g_hCom, g_wrOverlapped);
-	//StartWeldTest();
+	StartWeldTest();
 
 	VideoCapture cap(0); // open the default camera
 	if (!cap.isOpened())
