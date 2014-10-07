@@ -235,6 +235,7 @@ bool ProcessImg(Mat& img, Point& contourCenter, double& contourTheta, double& co
 	//大津法阈值分割
 	cv::threshold(grayimg,grayimg,0,255,THRESH_OTSU);
 	//grayimg = grayimg < 45;
+	//imshow("ret",res);
 	imshow("bw", grayimg);
 
 	//
@@ -342,7 +343,9 @@ bool ProcessImg(Mat& img, Point& contourCenter, double& contourTheta, double& co
 		edg = edges[i];
 		int x = edg.x[0];
 		int y = (edg.y[0] + edg.y[1] + 0.5) / 2;
-		houghImg.ptr<uchar>(y)[x] = 255;
+		
+		//houghImg.ptr<Vec3b>(y)[x] = Scalar(255,255,255);
+		img.at<Vec3b>(y,x) = Vec3b(0, 255, 0);
 	}
 
 
@@ -354,7 +357,7 @@ bool ProcessImg(Mat& img, Point& contourCenter, double& contourTheta, double& co
 	waitKey();
 	
 	bool findCenter = GetCenterAndWidthAndLength(contourPoints, contourTheta, contourCenter, contourWidth, contourLength);
-	circle(img, contourCenter, contourWidth / 2, Scalar(255, 255, 255), 1);
+	//circle(img, contourCenter, contourWidth / 2, Scalar(255, 255, 255), 1);
 	imshow("res", img);
 	waitKey();
 	return true;

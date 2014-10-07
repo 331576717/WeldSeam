@@ -2,11 +2,12 @@
 
 
 
-bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
+bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* comNum)
 {
 	//第一步，打开串口
 	//HANDLE m_hCom;
-	m_hCom = CreateFile((WCHAR*)_T("COM12"), GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+	
+	m_hCom = CreateFile((LPCWSTR)comNum, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
 	if (m_hCom == INVALID_HANDLE_VALUE)
 	{
 		std::cout << "CreateFile fail!" << endl;
@@ -65,6 +66,7 @@ bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped)
 	}
 	return true;
 }
+
 bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int bufferSize)
 {
 
@@ -104,7 +106,87 @@ bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int buffer
 
 }
 
-void FormateData(Point3i pt, Speed speed, char* buffer, int flag)
+int FormateIniWeldPara(WeldPara wp, char* buffer, int flag)
+{
+	buffer[0] = flag & 255;
+	//h0
+	buffer[1] = (wp.h0 >> 24) & 255;
+	buffer[2] = (wp.h0 >> 16) & 255;
+	buffer[3] = (wp.h0 >> 8) & 255;
+	buffer[4] = (wp.h0 >> 0) & 255;
+	//h1
+	buffer[5] = (wp.h1 >> 24) & 255;
+	buffer[6] = (wp.h1 >> 16) & 255;
+	buffer[7] = (wp.h1 >> 8) & 255;
+	buffer[8] = (wp.h1 >> 0) & 255;
+	//h2
+	buffer[9] = (wp.h2 >> 24) & 255;
+	buffer[10] = (wp.h2 >> 16) & 255;
+	buffer[11] = (wp.h2 >> 8) & 255;
+	buffer[12] = (wp.h2 >> 0) & 255;
+	//h3
+	buffer[13] = (wp.h3 >> 24) & 255;
+	buffer[14] = (wp.h3 >> 16) & 255;
+	buffer[15] = (wp.h3 >> 8) & 255;
+	buffer[16] = (wp.h3 >> 0) & 255;
+	//h4
+	buffer[17] = (wp.h4 >> 24) & 255;
+	buffer[18] = (wp.h4 >> 16) & 255;
+	buffer[19] = (wp.h4 >> 8) & 255;
+	buffer[20] = (wp.h4 >> 0) & 255;
+	//h5
+	buffer[21] = (wp.h5 >> 24) & 255;
+	buffer[22] = (wp.h5 >> 16) & 255;
+	buffer[23] = (wp.h5 >> 8) & 255;
+	buffer[24] = (wp.h5 >> 0) & 255;
+	//v0
+	buffer[25] = (wp.v0 >> 24) & 255;
+	buffer[26] = (wp.v0 >> 16) & 255;
+	buffer[27] = (wp.v0 >> 8) & 255;
+	buffer[28] = (wp.v0 >> 0) & 255;
+	//v1
+	buffer[29] = (wp.v1 >> 24) & 255;
+	buffer[30] = (wp.v1 >> 16) & 255;
+	buffer[31] = (wp.v1 >> 8) & 255;
+	buffer[32] = (wp.v1 >> 0) & 255;
+	//v2
+	buffer[33] = (wp.v2 >> 24) & 255;
+	buffer[34] = (wp.v2 >> 16) & 255;
+	buffer[35] = (wp.v2 >> 8) & 255;
+	buffer[36] = (wp.v2 >> 0) & 255;
+	//v3
+	buffer[37] = (wp.v3 >> 24) & 255;
+	buffer[38] = (wp.v3 >> 16) & 255;
+	buffer[39] = (wp.v3 >> 8) & 255;
+	buffer[40] = (wp.v3 >> 0) & 255;
+	//v4
+	buffer[41] = (wp.v4 >> 24) & 255;
+	buffer[42] = (wp.v4 >> 16) & 255;
+	buffer[43] = (wp.v4 >> 8) & 255;
+	buffer[44] = (wp.v4 >> 0) & 255;
+	//v5
+	buffer[45] = (wp.v5 >> 24) & 255;
+	buffer[46] = (wp.v5 >> 16) & 255;
+	buffer[47] = (wp.v5 >> 8) & 255;
+	buffer[48] = (wp.v5 >> 0) & 255;
+	//i1
+	buffer[49] = (wp.i1 >> 24) & 255;
+	buffer[50] = (wp.i1 >> 16) & 255;
+	buffer[51] = (wp.i1 >> 8) & 255;
+	buffer[52] = (wp.i1 >> 0) & 255;
+	//i2
+	buffer[53] = (wp.i2 >> 24) & 255;
+	buffer[54] = (wp.i2 >> 16) & 255;
+	buffer[55] = (wp.i2 >> 8) & 255;
+	buffer[56] = (wp.i2 >> 0) & 255;
+	//i1
+	buffer[57] = (wp.i3 >> 24) & 255;
+	buffer[58] = (wp.i3 >> 16) & 255;
+	buffer[59] = (wp.i3 >> 8) & 255;
+	buffer[60] = (wp.i3 >> 0) & 255;
+	return 61;
+}
+int FormatePointData(Point3i pt, Speed speed, char* buffer, int flag)
 {
 	buffer[0] = flag & 255;
 	//X
@@ -141,6 +223,7 @@ void FormateData(Point3i pt, Speed speed, char* buffer, int flag)
 	buffer[23] = (speed.zSpeed >> 8) & 255;
 	buffer[24] = speed.zSpeed & 255;
 	buffer[25] = '\n';
+	return 26;
 	/*char temp;
 	//X
 	buffer[1] = pt.x >> 25;

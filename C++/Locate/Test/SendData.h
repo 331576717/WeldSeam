@@ -22,11 +22,20 @@ struct Speed
 
 };
 
-bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped);
+struct WeldPara
+{
+	int h0, h1, h2, h3, h4, h5;
+	int v0, v1, v2, v3, v4, v5;
+	int i1, i2, i3;
+};
+
+bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* comNum);
 
 bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int bufferSize);
 
-void FormateData(Point3i pt, Speed speed, char* buffer, int flag = ControlFlag::RELATIVE_POSITION);
+int FormatePointData(Point3i pt, Speed speed, char* buffer, int flag = ControlFlag::RELATIVE_POSITION);
+
+int FormateIniWeldPara(WeldPara wp, char* buffer, int flag);
 
 double MoveTime(Point3i start, Point3i end, Speed sp, double delay = 0);
 

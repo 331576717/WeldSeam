@@ -29,7 +29,7 @@ void MoveMachineArm(cv::Point center, const double theta, const double weld_line
 				pathPoints[i].x = pathPoints[i].x * 1000 / 3;
 				pathPoints[i].x = pathPoints[i].y * 1000 / 3;
 				nextPoint = Point3i(pathPoints[i].x, pathPoints[i].y, z);
-				FormateData(nextPoint, sp, buffer, ControlFlag::RELATIVE_POSITION);
+				FormatePointData(nextPoint, sp, buffer, ControlFlag::RELATIVE_POSITION);
 				Sleep(2000 / pathPoints.size());
 			}
 			break;

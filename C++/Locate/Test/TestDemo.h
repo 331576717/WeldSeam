@@ -31,7 +31,7 @@
 }*/
 void testImg()
 {
-	Mat mat = imread("C:\\Users\\James\\Desktop\\2014-09-25\\15-05-28.bmp");
+	Mat mat = imread("C:\\Users\\James\\Desktop\\2014-09-25\\15-09-11.bmp");
 	Point contourCenter(0, 0);
 	double contourWidth = 0.0;
 	double contourLength = 0.0;
