@@ -12,7 +12,7 @@
 using namespace std;
 using namespace cv;
 
-enum ControlFlag{ ABSOLUTE_POSITION = 1, RELATIVE_POSITION = 3 };
+enum ControlFlag{ ABSOLUTE_POSITION = 1, RELATIVE_POSITION = 3, START_WELD = 5, WELD_PARA = 7};
 
 struct Speed
 {
@@ -33,10 +33,12 @@ bool InitCom(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* comNum);
 
 bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int bufferSize);
 
-int FormatePointData(Point3i pt, Speed speed, char* buffer, int flag = ControlFlag::RELATIVE_POSITION);
+int FormatPointData(Point3i pt, Speed speed, char* buffer, int flag = ControlFlag::RELATIVE_POSITION);
 
-int FormateIniWeldPara(WeldPara wp, char* buffer, int flag);
+int FormatIniWeldPara(WeldPara wp, char* buffer, int flag);
 
 double MoveTime(Point3i start, Point3i end, Speed sp, double delay = 0);
+
+int FormateInt32(int num, char* buffer);
 
 #endif

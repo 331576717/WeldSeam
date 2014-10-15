@@ -71,7 +71,7 @@ DWORD WINAPI ImgProcThread(LPVOID param)
 		WaitForSingleObject(g_hProcSemaphore, INFINITE);
 		if (g_pointCount < 14)
 		{
-			FormatePointData(g_vP[g_pointCount], g_vS[g_pointCount], g_buffer);
+			FormatPointData(g_vP[g_pointCount], g_vS[g_pointCount], g_buffer);
 			g_pointCount++;
 			cout << "Processing" << "Y: " << g_vP[g_pointCount].y << endl;
 			ReleaseSemaphore(g_hTimingSemaphore, 1, NULL);
@@ -88,8 +88,8 @@ void StartWeld()
 	Point3i readyPoint(8000, 4000, 0);
 	//前往焊条起焊准备点的速度
 	Speed goReaPoiSpeed(3000, 3000, 3000);
-	FormatePointData(readyPoint, goReaPoiSpeed, g_buffer);
-	//FormatePointData(Point3i(8000, 4000, 0), Speed(3000, 3000, 3000), g_buffer);
+	FormatPointData(readyPoint, goReaPoiSpeed, g_buffer);
+	//FormatPointData(Point3i(8000, 4000, 0), Speed(3000, 3000, 3000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(MoveTime(originPoint, readyPoint, goReaPoiSpeed));
 	//Sleep(10000);
@@ -99,8 +99,8 @@ void StartWeld()
 	Point3i downPoint(8000, 4000, 17000);
 	//前往点火点速度
 	Speed goDownPoiSpeed(3000, 3000, 40000);
-	FormatePointData(downPoint, goDownPoiSpeed, g_buffer);
-	//FormatePointData(Point3i(8000, 4000, 17000), Speed(3000, 3000, 40000), g_buffer);
+	FormatPointData(downPoint, goDownPoiSpeed, g_buffer);
+	//FormatPointData(Point3i(8000, 4000, 17000), Speed(3000, 3000, 40000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(MoveTime(readyPoint, downPoint, goDownPoiSpeed));
 	//Sleep(1100);
@@ -110,8 +110,8 @@ void StartWeld()
 	Point3i upPoint(8000, 4000, 15000);
 	//点火后抬起速度
 	Speed goUpPoiSpeed(3000, 3000, 20000);
-	FormatePointData(upPoint, goUpPoiSpeed, g_buffer);
-	//FormatePointData(Point3i(8000, 4000, 15000), Speed(3000, 3000, 20000), g_buffer);
+	FormatPointData(upPoint, goUpPoiSpeed, g_buffer);
+	//FormatPointData(Point3i(8000, 4000, 15000), Speed(3000, 3000, 20000), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(MoveTime(downPoint, upPoint, goUpPoiSpeed));
 	//Sleep(1100);
@@ -121,8 +121,8 @@ void StartWeld()
 	//Point3i Point(8000, 4000, 15000);
 	////前往压低点速度
 	//Speed goUpPoiSpeed(3000, 3000, 20000);
-	//FormatePointData(upPoint, goUpPoiSpeed, g_buffer);
-	////FormatePointData(Point3i(8000, 4000, 15000), Speed(3000, 3000, 20000), g_buffer);
+	//FormatPointData(upPoint, goUpPoiSpeed, g_buffer);
+	////FormatPointData(Point3i(8000, 4000, 15000), Speed(3000, 3000, 20000), g_buffer);
 	//SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	//Sleep(MoveTime(downPoint, upPoint, goUpPoiSpeed));
 	////Sleep(1100);
@@ -134,30 +134,30 @@ void StartWeldTest()
 	//putText(img, "Start", Point(90, 60), 1, 3, Scalar(0));
 
 	//准备
-	FormatePointData(Point3i(267 * 1000 / 3, 12 * 1000 / 3, 90 * 1000 / 3), Speed(25000, 25000, 25000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+	FormatPointData(Point3i(267 * 1000 / 3, 12 * 1000 / 3, 90 * 1000 / 3), Speed(25000, 25000, 25000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(1000);
 	//下压
-	FormatePointData(Point3i(261 * 1000 / 3, 12 * 1000 / 3, 99 * 1000 / 3), Speed(13000, 11000, 40000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+	FormatPointData(Point3i(261 * 1000 / 3, 12 * 1000 / 3, 99 * 1000 / 3), Speed(13000, 11000, 40000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(200);
 	//抬起
-	FormatePointData(Point3i(263 * 1000 / 3, 12 * 1000 / 3, 94 * 1000 / 3), Speed(2500, 2500, 15000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+	FormatPointData(Point3i(263 * 1000 / 3, 12 * 1000 / 3, 94 * 1000 / 3), Speed(2500, 2500, 15000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(1000);
 	//压低1
-	FormatePointData(Point3i(270 * 1000 / 3, 12 * 1000 / 3, 95 * 1000 / 3), Speed(1000, 2500, 5000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+	FormatPointData(Point3i(270 * 1000 / 3, 12 * 1000 / 3, 95 * 1000 / 3), Speed(1000, 2500, 5000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(1500);
 	//压低2
-	FormatePointData(Point3i(270 * 1000 / 3, 12 * 1000 / 3, 95 * 1000 / 3), Speed(1000, 2500, 5000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+	FormatPointData(Point3i(270 * 1000 / 3, 12 * 1000 / 3, 95 * 1000 / 3), Speed(1000, 2500, 5000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(300);
 	//前进1000
-	FormatePointData(Point3i(600 * 1000 / 3, 12 * 1000 / 3, 150 * 1000 / 3), Speed(3 * 1000 / 3, 2500, 1250), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+	FormatPointData(Point3i(600 * 1000 / 3, 12 * 1000 / 3, 150 * 1000 / 3), Speed(3 * 1000 / 3, 2500, 1250), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(1000);
-	FormatePointData(Point3i(600 * 1000 / 3, 13 * 1000 / 3, 0.0 * 1000 / 3), Speed(2500, 2500, 20000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+	FormatPointData(Point3i(600 * 1000 / 3, 13 * 1000 / 3, 0.0 * 1000 / 3), Speed(2500, 2500, 20000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(1000);
 for (size_t i = 0; i < 15; i++)
@@ -176,14 +176,14 @@ for (size_t i = 0; i < 15; i++)
 			pathPoints[j].x = pathPoints[j].x * 1000 / 3;
 			pathPoints[j].y = pathPoints[j].y * 1000 / 3;
 			nextPoint = Point3i(pathPoints[j].x, pathPoints[j].y, z);
-			FormatePointData(nextPoint, sp, g_buffer, ControlFlag::RELATIVE_POSITION);
+			FormatPointData(nextPoint, sp, g_buffer, ControlFlag::RELATIVE_POSITION);
 			bool send = SendData(g_hCom, g_wrOverlapped, g_buffer, 32);
 			Sleep(2000 / pathPoints.size());
 		}
 	}
 
 	////朝目标点移动
-	//FormatePointData(Point3i(600 * 1000 / 3, 52 * 1000 / 3, 320 * 1000 / 3), Speed(1850, 0, 950), g_buffer);
+	//FormatPointData(Point3i(600 * 1000 / 3, 52 * 1000 / 3, 320 * 1000 / 3), Speed(1850, 0, 950), g_buffer);
 	//SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 
 	//imshow("wait", img);
@@ -192,12 +192,12 @@ for (size_t i = 0; i < 15; i++)
 
 void WeldTest()
 {
-	FormatePointData(Point3i(1, 1000, 2000), Speed(90000, 20000, 0), g_buffer);
+	FormatPointData(Point3i(1, 1000, 2000), Speed(90000, 20000, 0), g_buffer);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 	Sleep(3000);
 	for (int i = 0; i < 15; i++)
 	{
-		FormatePointData(Point3i(10000, 0, 0), Speed(25000, 0, 0), g_buffer);
+		FormatPointData(Point3i(10000, 0, 0), Speed(25000, 0, 0), g_buffer);
 		SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 		Sleep(1000);
 	}
@@ -222,12 +222,12 @@ double ConvertPixelToMillimeter(int pixel)
 
 void testMove()
 {
-	FormatePointData(Point3i(10000, 10000, 10000), Speed(50000, 50000, 10000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+	FormatPointData(Point3i(10000, 10000, 10000), Speed(50000, 50000, 10000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 	SendData(g_hCom, g_wrOverlapped, g_buffer, 32);
 	Sleep(2000);
 	for (size_t i = 1; i < 15; i++)
 	{
-		FormatePointData(Point3i(10000+3000*i,10000,10000), Speed(2000,10000,10000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+		FormatPointData(Point3i(10000+3000*i,10000,10000), Speed(2000,10000,10000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 		SendData(g_hCom, g_wrOverlapped, g_buffer, 32);
 		Sleep(1000);
 	}
@@ -236,9 +236,14 @@ void testMove()
 int main()
 {
 	
-	
+	int a = 4;
+	FormateInt32(a, g_buffer);
+	unsigned char c[10];
+	c[0] = 177;
+	int ui = c[0];
+	cout << ui;
 	testImg();
-	//FormatePointData(Point3i(10000,10000,10000), Speed(10000,10000,10000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+	//FormatPointData(Point3i(10000,10000,10000), Speed(10000,10000,10000), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 	//SendData(g_hCom, g_wrOverlapped, g_buffer, 32);
 	
 	//bool ini = InitCom(g_hCom, g_wrOverlapped, "COM6");
@@ -292,7 +297,7 @@ int main()
 				count++;
 			}
 			if ('a' == c){
-				FormatePointData(Point3i(0, 0, 0), Speed(4000, 0, 0), g_buffer, ControlFlag::ABSOLUTE_POSITION);
+				FormatPointData(Point3i(0, 0, 0), Speed(4000, 0, 0), g_buffer, ControlFlag::ABSOLUTE_POSITION);
 				SendData(g_hCom, g_wrOverlapped, g_buffer, sizeof(g_buffer));
 				break;
 			}

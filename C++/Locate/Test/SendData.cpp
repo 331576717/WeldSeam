@@ -106,7 +106,26 @@ bool SendData(HANDLE& m_hCom, OVERLAPPED& wrOverlapped, char* buffer, int buffer
 
 }
 
-int FormateIniWeldPara(WeldPara wp, char* buffer, int flag)
+int FormateInt32(int num, char* buffer)
+{
+	buffer[0] = ((num >> 24) & 255) | 1;
+	buffer[1] = ((num >> 17) & 255) | 1;
+	buffer[2] = ((num >> 10) & 255) | 1;
+	buffer[3] = ((num >>  3) & 255) | 1;
+	buffer[4] = ((num & 15) << 4) | 1;
+	return 5;
+	
+}
+int FormateMutilInt32(void* begin, size_t size, char* buff)
+{
+	int offset = 0;
+	for (int i = 0; i < size / sizeof(int); ++i)
+	{
+		offset += FormateInt32(((int*)begin)[i], buff + offset);
+	}
+	return offset;
+}
+int FormatIniWeldPara(WeldPara wp, char* buffer, int flag)
 {
 	buffer[0] = flag & 255;
 	//h0
@@ -184,11 +203,22 @@ int FormateIniWeldPara(WeldPara wp, char* buffer, int flag)
 	buffer[58] = (wp.i3 >> 16) & 255;
 	buffer[59] = (wp.i3 >> 8) & 255;
 	buffer[60] = (wp.i3 >> 0) & 255;
-	return 61;
+	buffer[61] = '\n';
+	return 62;
 }
-int FormatePointData(Point3i pt, Speed speed, char* buffer, int flag)
+int FormatPointData(Point3i pt, Speed speed, char* buffer, int flag)
 {
 	buffer[0] = flag & 255;
+	int offset = 1;
+	//offset += FormateMutilInt32(&pt, sizeof pt, buffer + offset);
+	offset += FormateInt32(pt.x, buffer + offset);
+	offset += FormateInt32(pt.y, buffer + offset);
+	offset += FormateInt32(pt.z, buffer + offset);
+	offset += FormateInt32(speed.xSpeed, buffer + offset);
+	offset += FormateInt32(speed.ySpeed, buffer + offset);
+	offset += FormateInt32(speed.zSpeed, buffer + offset);
+	return offset;
+
 	//X
 	buffer[1] = pt.x >> 24;
 	buffer[2] = (pt.x >> 16) & 255;

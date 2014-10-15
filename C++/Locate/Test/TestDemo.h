@@ -31,7 +31,13 @@
 }*/
 void testImg()
 {
-	Mat mat = imread("C:\\Users\\James\\Desktop\\2014-09-25\\15-09-11.bmp");
+	string normal_str = "First line.\nSecond line.\nEnd of message.\n";
+	string raw_str = R"(F:\WeldSeam\pictures\2014-09- 25\15-05-28.bmp)";
+	cout << normal_str << endl;
+	cout << raw_str << endl;
+	Mat mat = imread(R"(F:\WeldSeam\pictures\2014-09-25\15-05-28.bmp)");
+	imshow("mat", mat);
+	waitKey();
 	Point contourCenter(0, 0);
 	double contourWidth = 0.0;
 	double contourLength = 0.0;
